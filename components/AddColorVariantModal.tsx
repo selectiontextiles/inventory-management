@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Check, Plus } from 'lucide-react';
+import { X, Check, Plus, Minus } from 'lucide-react';
 import { Product, STANDARD_SIZES } from '@/lib/types';
 
 interface AddColorVariantModalProps {
@@ -63,7 +63,7 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="pt-3 space-y-3">
+        <form onSubmit={handleSubmit} className="pt-3 space-y-4">
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Color / Shade Name *
@@ -74,45 +74,63 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
               value={colorName}
               onChange={(e) => setColorName(e.target.value)}
               placeholder="e.g. Royal Blue / Shade No. 18"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Initial Sizes (36 — 44)
             </label>
-            <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {STANDARD_SIZES.map(sz => {
                 const qty = sizes[sz] ?? 0;
                 return (
-                  <div key={sz} className="bg-slate-50 rounded-xl p-2 sm:p-2.5 border border-slate-200 text-center shadow-sm flex flex-col justify-between">
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      {sz}
-                    </span>
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleSizeChange(sz, String(Math.max(0, qty - 1)))}
-                        className="w-6 h-7 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold transition select-none"
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        value={qty}
-                        onChange={(e) => handleSizeChange(sz, e.target.value)}
-                        className="w-10 sm:w-12 h-7 text-center font-mono font-black num-tabular text-slate-900 text-sm sm:text-base bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleSizeChange(sz, String(qty + 1))}
-                        className="w-6 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-bold transition select-none"
-                      >
-                        +
-                      </button>
+                  <div 
+                    key={sz} 
+                    className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col items-center overflow-hidden transition focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900"
+                  >
+                    {/* Size Header Label */}
+                    <div className="w-full bg-slate-100/80 border-b border-slate-200/80 py-0.5 sm:py-1 text-center select-none">
+                      <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                        {sz}
+                      </span>
                     </div>
+
+                    {/* + Button (Top) */}
+                    <button
+                      type="button"
+                      onClick={() => handleSizeChange(sz, String(qty + 1))}
+                      className="w-full h-7 sm:h-8 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition select-none"
+                      title={`Increase size ${sz}`}
+                      aria-label={`Increase size ${sz}`}
+                    >
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
+                    </button>
+
+                    {/* Direct Quantity Input (Middle) */}
+                    <input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={qty === 0 ? '' : qty}
+                      placeholder="0"
+                      onChange={(e) => handleSizeChange(sz, e.target.value)}
+                      className="w-full h-7 sm:h-8 text-center font-mono font-black text-sm sm:text-base text-slate-900 bg-slate-50/60 border-y border-slate-200/70 focus:outline-none focus:bg-white transition num-tabular placeholder:text-slate-300"
+                    />
+
+                    {/* - Button (Bottom) */}
+                    <button
+                      type="button"
+                      onClick={() => handleSizeChange(sz, String(Math.max(0, qty - 1)))}
+                      disabled={qty <= 0}
+                      className="w-full h-7 sm:h-8 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-20 disabled:cursor-not-allowed transition select-none"
+                      title={`Decrease size ${sz}`}
+                      aria-label={`Decrease size ${sz}`}
+                    >
+                      <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
+                    </button>
                   </div>
                 );
               })}
