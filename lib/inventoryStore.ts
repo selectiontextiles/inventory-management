@@ -135,7 +135,7 @@ function calculateProductTotals(variants: ColorVariant[]) {
     STANDARD_SIZES.forEach(sz => {
       const q = v.sizes[sz] || 0;
       varTotal += q;
-      if (q === 0 || q <= 2) totalAlerts += 1;
+      if (q === 0) totalAlerts += 1;
     });
     v.totalUnits = varTotal;
     totalUnits += varTotal;

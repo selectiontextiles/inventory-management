@@ -32,7 +32,7 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
           {/* Prominent Visual Reference Photo */}
           <div
             onClick={() => product.imageUrl && onOpenImagePreview(product.imageUrl, product.name)}
-            className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200/90 cursor-pointer bg-slate-100 group shrink-0"
+            className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200/90 cursor-pointer bg-slate-50 group shrink-0"
             title="Tap to preview image"
           >
             {product.imageUrl ? (
@@ -45,8 +45,9 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-[10px]">
-                <span>No Photo</span>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100/80">
+                <Tag className="w-5 h-5 text-slate-400/80 mb-0.5" />
+                <span className="text-[9px] font-semibold text-slate-400">No Photo</span>
               </div>
             )}
             <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 flex items-center justify-center transition opacity-0 group-hover:opacity-100">
@@ -57,32 +58,32 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
           {/* Product Title, Subtitle, and Inline Alerts Badge */}
           <div className="flex-1 min-w-0 pr-6">
             {/* Full Product Title with 100% visibility */}
-            <h2 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug">
+            <h2 className="text-sm sm:text-lg font-extrabold text-slate-900 tracking-tight leading-snug">
               {product.name}
             </h2>
 
-            {/* Subtitle / Fabric Tag */}
+            {/* Subtitle / Fabric Tag (Wraps naturally up to 2 lines without harsh truncation) */}
             {product.subtitle && (
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1 font-medium">
-                <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="truncate">{product.subtitle}</span>
+              <div className="flex items-start gap-1.5 text-xs text-slate-500 mt-0.5 font-medium">
+                <Tag className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                <span className="line-clamp-2 leading-tight">{product.subtitle}</span>
               </div>
             )}
 
             {/* Meta Row: Alerts Pill & Total Units */}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {product.totalAlerts > 0 ? (
-                <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
-                  <AlertCircle className="w-3 h-3 text-[#b45309]" />
-                  <span>{product.totalAlerts} alerts</span>
+                <span className="inline-flex items-center gap-1 font-mono text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                  <AlertCircle className="w-3 h-3 text-amber-700 shrink-0" />
+                  <span>{product.totalAlerts} out of stock</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center font-mono text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="inline-flex items-center font-mono text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                   Healthy stock
                 </span>
               )}
 
-              <span className="text-[11px] font-semibold text-slate-400">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400">
                 • {product.totalUnits} total units
               </span>
             </div>
