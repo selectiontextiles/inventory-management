@@ -276,6 +276,101 @@ export async function fetchAllProducts(): Promise<Product[]> {
   }
 }
 
+/**
+ * Server-side range-paginated fetch for high-volume catalogs (1000+ products)
+ */
+export async function fetchProductsPaginated(page: number = 1, pageSize: number = 20): Promise<{ products: Product[]; total: number }> {
+  if (!isSupabaseConfigured || !supabase) {
+    const local = getLocalProducts();
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize;
+    return {
+      products: local.slice(from, to),
+      total: local.length,
+    };
+  }
+
+  try {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data: prodData, count, error: prodErr } = await supabase
+      .from('products')
+      .select(`
+        id,
+        sku,
+        name,
+        subtitle,
+        category,
+        price,
+        image_url,
+        created_at,
+        updated_at,
+        product_variants (
+          id,
+          color_name,
+          color_hex,
+          size_36,
+          size_38,
+          size_40,
+          size_42,
+          size_44
+        )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (prodErr || !prodData) {
+      const local = getLocalProducts();
+      return { products: local.slice(from, from + pageSize), total: local.length };
+    }
+
+    const products = prodData.map((p: any) => {
+      const rawVariants = Array.isArray(p.product_variants) ? p.product_variants : [];
+      const variants: ColorVariant[] = rawVariants.map((row: any) => {
+        const cleanSizes: Record<string, number> = {
+          '36': Math.max(0, row.size_36 || 0),
+          '38': Math.max(0, row.size_38 || 0),
+          '40': Math.max(0, row.size_40 || 0),
+          '42': Math.max(0, row.size_42 || 0),
+          '44': Math.max(0, row.size_44 || 0),
+        };
+        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+        return {
+          id: row.id,
+          colorName: row.color_name,
+          colorHex: row.color_hex || '',
+          sizes: cleanSizes,
+          totalUnits,
+        };
+      });
+
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+
+      return {
+        id: p.id,
+        sku: p.sku || `ST-${p.id.slice(0, 4)}`,
+        name: p.name,
+        subtitle: p.subtitle || '',
+        category: p.category || 'General',
+        price: Number(p.price) || 0,
+        imageUrl: p.image_url || '',
+        variants,
+        totalUnits,
+        totalAlerts,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      };
+    });
+
+    return { products, total: count || products.length };
+  } catch (err) {
+    const local = getLocalProducts();
+    const from = (page - 1) * pageSize;
+    return { products: local.slice(from, from + pageSize), total: local.length };
+  }
+}
+
 export async function saveProduct(formData: ProductFormData, existingId?: string): Promise<Product> {
   const local = getLocalProducts();
   const now = new Date().toISOString();
@@ -490,6 +585,63 @@ export async function deleteProduct(productId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Compresses user images client-side into lightweight WebP format (~50KB-80KB)
+ * Drastically reduces Supabase storage footprint and egress bandwidth consumption.
+ */
+export async function compressImageToWebP(file: File, maxDimension = 1080, quality = 0.82): Promise<Blob> {
+  // If not in browser environment, return original
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new (window as any).Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob || file);
+          },
+          'image/webp',
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+}
+
 export async function uploadProductImage(file: File): Promise<string> {
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
     throw new Error('File size exceeds the 5MB limit.');
@@ -499,23 +651,30 @@ export async function uploadProductImage(file: File): Promise<string> {
     throw new Error('Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image.');
   }
 
+  // Compress image client-side to lightweight WebP (~50KB)
+  const compressedBlob = await compressImageToWebP(file);
+  const compressedFile = new File([compressedBlob], `photo.webp`, { type: 'image/webp' });
+
   if (isSupabaseConfigured && supabase) {
     try {
-      const rawExt = file.name.split('.').pop() || 'png';
-      const safeExt = rawExt.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'png';
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
       const filePath = `products/${fileName}`;
 
+      // 1 year immutable browser caching (31536000s) to guarantee zero repeat egress
       const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+        .upload(filePath, compressedFile, { 
+          cacheControl: '31536000', 
+          contentType: 'image/webp',
+          upsert: true 
+        });
 
       if (!uploadError) {
         const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
         if (data?.publicUrl) return data.publicUrl;
       }
     } catch (err) {
-      console.warn('Storage upload error:', err);
+      console.warn('Storage upload error, using local fallback:', err);
     }
   }
 
@@ -523,7 +682,7 @@ export async function uploadProductImage(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedFile);
   });
 }
 

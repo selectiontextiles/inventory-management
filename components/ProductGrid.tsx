@@ -29,6 +29,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState<'default' | 'units-desc' | 'name-asc'>('default');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 12;
+
+  // Reset to first page when filtering or searching
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredSearchQuery, selectedCategory, sortBy]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -46,8 +53,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         const matchesName = p.name.toLowerCase().includes(q);
         const matchesSubtitle = (p.subtitle || '').toLowerCase().includes(q);
         const matchesCategory = p.category.toLowerCase().includes(q);
+        const matchesSku = (p.sku || '').toLowerCase().includes(q);
         const matchesAnyVariant = p.variants.some(v => v.colorName.toLowerCase().includes(q));
-        if (!matchesName && !matchesSubtitle && !matchesCategory && !matchesAnyVariant) {
+        if (!matchesName && !matchesSubtitle && !matchesCategory && !matchesSku && !matchesAnyVariant) {
           return false;
         }
       }
@@ -64,10 +72,31 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     });
   }, [products, deferredSearchQuery, selectedCategory, sortBy]);
 
+  const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE) || 1;
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Generate responsive windowed page numbers (e.g., [1, 2, 3, 4, 5])
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = new Set<number>([1, totalPages]);
+    for (let offset = -1; offset <= 1; offset++) {
+      const p = currentPage + offset;
+      if (p > 1 && p < totalPages) {
+        pages.add(p);
+      }
+    }
+    return Array.from(pages).sort((a, b) => a - b);
+  };
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedCategory('All');
     setSortBy('default');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All' || sortBy !== 'default';
@@ -83,13 +112,14 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products or shades..."
+            placeholder="Search by name, fabric, color, or shade..."
             className="w-full pl-8 pr-7 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm placeholder-slate-400 text-slate-900 focus:outline-none focus:border-slate-900 transition"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+              aria-label="Clear search"
             >
               <X className="w-3 h-3" />
             </button>
@@ -157,10 +187,29 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         </div>
       )}
 
+      {/* Active Search & Filter Feedback Pill */}
+      {hasActiveFilters && (
+        <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 pt-0.5">
+          <span>
+            {searchQuery ? (
+              <>Results for <strong className="text-slate-800">&quot;{searchQuery}&quot;</strong> ({filteredProducts.length})</>
+            ) : (
+              <>Filtered by <strong className="text-slate-800">{selectedCategory}</strong> ({filteredProducts.length})</>
+            )}
+          </span>
+          <button
+            onClick={clearAllFilters}
+            className="text-slate-500 hover:text-slate-900 font-medium underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Product Color Cards List */}
-      {filteredProducts.length > 0 ? (
+      {currentProducts.length > 0 ? (
         <div className="space-y-4">
-          {filteredProducts.map((product) => (
+          {currentProducts.map((product) => (
             <ProductColorCard
               key={product.id}
               product={product}
@@ -171,6 +220,49 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               onAddVariant={onAddVariant}
             />
           ))}
+
+          {/* Minimal Pagination Toolbar */}
+          {totalPages > 1 && (
+            <div className="bg-white rounded-xl border border-slate-200 px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
+              <span className="text-slate-500 font-medium text-[11px] sm:text-xs">
+                Showing <strong className="text-slate-900">{startIndex + 1}–{Math.min(endIndex, filteredProducts.length)}</strong> of <strong className="text-slate-900">{filteredProducts.length}</strong>
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-xs transition"
+                >
+                  Prev
+                </button>
+
+                <div className="flex items-center gap-1 px-0.5">
+                  {getPageNumbers().map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-xs font-semibold transition ${
+                        currentPage === page
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed font-medium text-xs transition"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Empty State */

@@ -29,7 +29,15 @@ export const StockHistoryDrawer: React.FC<StockHistoryDrawerProps> = ({
   history,
   products,
 }) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const PAGE_SIZE = 20;
+
   if (!isOpen) return null;
+
+  const totalPages = Math.ceil(history.length / PAGE_SIZE) || 1;
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const currentHistory = history.slice(startIndex, endIndex);
 
   const exportInventoryCSV = () => {
     const headers = ['Product Name', 'Subtitle', 'Category', 'Color / Shade', 'Size 36', 'Size 38', 'Size 40', 'Size 42', 'Size 44', 'Total Units'];
@@ -103,8 +111,8 @@ export const StockHistoryDrawer: React.FC<StockHistoryDrawerProps> = ({
 
         {/* History Ledger List */}
         <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
-          {history.length > 0 ? (
-            history.map((item) => {
+          {currentHistory.length > 0 ? (
+            currentHistory.map((item) => {
               const isInward = item.changeAmount > 0;
               return (
                 <div
@@ -144,6 +152,31 @@ export const StockHistoryDrawer: React.FC<StockHistoryDrawerProps> = ({
             </div>
           )}
         </div>
+
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+            <span>
+              Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({history.length} records)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg font-medium text-xs hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                ← Prev
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg font-medium text-xs hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

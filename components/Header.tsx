@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { Plus, History, RefreshCw } from 'lucide-react';
-import { isSupabaseConfigured } from '@/lib/supabase';
 
 interface HeaderProps {
   onAddNew: () => void;
@@ -42,12 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-500 font-medium">
-              <span>{totalProducts} Designs</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1">
-                <span className={`w-1.5 h-1.5 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                {isSupabaseConfigured ? 'Live' : 'Demo'}
-              </span>
+              <span>{totalProducts} Products</span>
             </div>
           </div>
         </div>
