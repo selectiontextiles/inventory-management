@@ -1,0 +1,532 @@
+import { Product, ColorVariant, ProductFormData, StockHistoryItem, STANDARD_SIZES } from './types';
+import { supabase, isSupabaseConfigured } from './supabase';
+
+const LOCAL_STORAGE_KEY = 'selection_textiles_products_v2';
+const LOCAL_STORAGE_HISTORY_KEY = 'selection_textiles_history_v2';
+
+// 5MB maximum file upload size
+export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+// Seed sample textile inventory matching user's exact structure
+export const SEED_PRODUCTS: Product[] = [
+  {
+    id: 'prod-001',
+    sku: 'ST-001',
+    name: 'Uathayam 2in1 Sets',
+    subtitle: 'Divine Fixit Full Shirt Dhoti Set',
+    category: 'Ethnic Sets',
+    price: 1850,
+    imageUrl: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=800&auto=format&fit=crop&q=80',
+    totalUnits: 81,
+    totalAlerts: 16,
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    variants: [
+      {
+        id: 'var-01',
+        colorName: 'T.Blue / Sh No.02',
+        colorHex: '#38bdf8',
+        sizes: { '36': 1, '38': 2, '40': 3, '42': 2, '44': 3 },
+        totalUnits: 11,
+      },
+      {
+        id: 'var-02',
+        colorName: 'Orange / Sh No.03',
+        colorHex: '#fb923c',
+        sizes: { '36': 1, '38': 1, '40': 0, '42': 1, '44': 2 },
+        totalUnits: 5,
+      },
+      {
+        id: 'var-03',
+        colorName: 'Green / Shade No. 04',
+        colorHex: '#4ade80',
+        sizes: { '36': 3, '38': 5, '40': 1, '42': 2, '44': 1 },
+        totalUnits: 12,
+      },
+      {
+        id: 'var-04',
+        colorName: 'Meroon / Shade No. 6',
+        colorHex: '#881337',
+        sizes: { '36': 3, '38': 2, '40': 1, '42': 2, '44': 2 },
+        totalUnits: 10,
+      },
+      {
+        id: 'var-05',
+        colorName: 'Mastard / Shade No.09',
+        colorHex: '#facc15',
+        sizes: { '36': 2, '38': 3, '40': 2, '42': 3, '44': 2 },
+        totalUnits: 12,
+      },
+      {
+        id: 'var-06',
+        colorName: 'Pink / Shade No.10',
+        colorHex: '#f472b6',
+        sizes: { '36': 2, '38': 2, '40': 3, '42': 2, '44': 2 },
+        totalUnits: 11,
+      },
+      {
+        id: 'var-07',
+        colorName: 'Silver / Shade No.11',
+        colorHex: '#94a3b8',
+        sizes: { '36': 0, '38': 3, '40': 1, '42': 2, '44': 0 },
+        totalUnits: 6,
+      },
+      {
+        id: 'var-08',
+        colorName: 'Purple / Shade No.14',
+        colorHex: '#a855f7',
+        sizes: { '36': 1, '38': 1, '40': 2, '42': 2, '44': 1 },
+        totalUnits: 7,
+      },
+      {
+        id: 'var-09',
+        colorName: 'Sea Blue / Shade No.16',
+        colorHex: '#0284c7',
+        sizes: { '36': 1, '38': 2, '40': 2, '42': 1, '44': 1 },
+        totalUnits: 7,
+      },
+    ],
+  },
+  {
+    id: 'prod-002',
+    sku: 'ST-002',
+    name: 'Selection Linen Classic Shirts',
+    subtitle: 'Pure French Normandy Linen 60 Lea',
+    category: 'Linen',
+    price: 2450,
+    imageUrl: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80',
+    totalUnits: 45,
+    totalAlerts: 4,
+    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    variants: [
+      {
+        id: 'var-10',
+        colorName: 'Sand Beige / Shade No.01',
+        colorHex: '#d6c7b2',
+        sizes: { '36': 3, '38': 5, '40': 6, '42': 2, '44': 1 },
+        totalUnits: 17,
+      },
+      {
+        id: 'var-11',
+        colorName: 'Olive Sage / Shade No.05',
+        colorHex: '#65a30d',
+        sizes: { '36': 2, '38': 4, '40': 5, '42': 3, '44': 1 },
+        totalUnits: 15,
+      },
+      {
+        id: 'var-12',
+        colorName: 'Optic White / Shade No.08',
+        colorHex: '#ffffff',
+        sizes: { '36': 1, '38': 3, '40': 4, '42': 3, '44': 2 },
+        totalUnits: 13,
+      },
+    ],
+  }
+];
+
+function calculateProductTotals(variants: ColorVariant[]) {
+  let totalUnits = 0;
+  let totalAlerts = 0;
+
+  variants.forEach(v => {
+    let varTotal = 0;
+    STANDARD_SIZES.forEach(sz => {
+      const q = v.sizes[sz] || 0;
+      varTotal += q;
+      if (q === 0 || q <= 2) totalAlerts += 1;
+    });
+    v.totalUnits = varTotal;
+    totalUnits += varTotal;
+  });
+
+  return { totalUnits, totalAlerts };
+}
+
+function getLocalProducts(): Product[] {
+  if (typeof window === 'undefined') return SEED_PRODUCTS;
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (!stored) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_PRODUCTS));
+    return SEED_PRODUCTS;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return SEED_PRODUCTS;
+  }
+}
+
+function saveLocalProducts(products: Product[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(products));
+}
+
+function getLocalHistory(): StockHistoryItem[] {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalHistory(item: StockHistoryItem) {
+  if (typeof window === 'undefined') return;
+  const current = getLocalHistory();
+  localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify([item, ...current.slice(0, 49)]));
+}
+
+function generateNextSku(existing: Product[]): string {
+  let max = 0;
+  existing.forEach(p => {
+    const m = (p.sku || '').match(/(\d+)/);
+    if (m) {
+      const v = parseInt(m[1], 10);
+      if (v > max) max = v;
+    }
+  });
+  return `ST-${(max + 1).toString().padStart(3, '0')}`;
+}
+
+// ============================================================================
+// Data Operations (Batch Queries & High Performance)
+// ============================================================================
+
+export async function fetchAllProducts(): Promise<Product[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return getLocalProducts();
+  }
+
+  try {
+    // 1 single roundtrip query with nested foreign key join (Postgres / Supabase best practice)
+    const { data: prodData, error: prodErr } = await supabase
+      .from('products')
+      .select(`
+        id,
+        sku,
+        name,
+        subtitle,
+        category,
+        price,
+        image_url,
+        created_at,
+        updated_at,
+        product_variants (
+          id,
+          color_name,
+          color_hex,
+          size_36,
+          size_38,
+          size_40,
+          size_42,
+          size_44
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (prodErr || !prodData || prodData.length === 0) {
+      return getLocalProducts();
+    }
+
+    return prodData.map((p: any) => {
+      const rawVariants = Array.isArray(p.product_variants) ? p.product_variants : [];
+      const variants: ColorVariant[] = rawVariants.map((row: any) => {
+        const cleanSizes: Record<string, number> = {
+          '36': Math.max(0, row.size_36 || 0),
+          '38': Math.max(0, row.size_38 || 0),
+          '40': Math.max(0, row.size_40 || 0),
+          '42': Math.max(0, row.size_42 || 0),
+          '44': Math.max(0, row.size_44 || 0),
+        };
+        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+
+        return {
+          id: row.id,
+          colorName: row.color_name,
+          colorHex: row.color_hex || '',
+          sizes: cleanSizes,
+          totalUnits,
+        };
+      });
+
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+
+      return {
+        id: p.id,
+        sku: p.sku || `ST-${p.id.slice(0, 4)}`,
+        name: p.name,
+        subtitle: p.subtitle || '',
+        category: p.category || 'General',
+        price: Number(p.price) || 0,
+        imageUrl: p.image_url || '',
+        variants,
+        totalUnits,
+        totalAlerts,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      };
+    });
+  } catch (err) {
+    console.warn('Supabase fetch failed, falling back to local store:', err);
+    return getLocalProducts();
+  }
+}
+
+export async function saveProduct(formData: ProductFormData, existingId?: string): Promise<Product> {
+  const local = getLocalProducts();
+  const now = new Date().toISOString();
+
+  // Validate and sanitize variants
+  const processedVariants: ColorVariant[] = formData.variants.map((v, idx) => {
+    const cleanSizes: Record<string, number> = {
+      '36': Math.max(0, Number(v.sizes['36']) || 0),
+      '38': Math.max(0, Number(v.sizes['38']) || 0),
+      '40': Math.max(0, Number(v.sizes['40']) || 0),
+      '42': Math.max(0, Number(v.sizes['42']) || 0),
+      '44': Math.max(0, Number(v.sizes['44']) || 0),
+    };
+    const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+
+    return {
+      id: `var-${Date.now()}-${idx}`,
+      colorName: v.colorName.trim() || `Shade No.${idx + 1}`,
+      sizes: cleanSizes,
+      totalUnits,
+    };
+  });
+
+  const { totalUnits, totalAlerts } = calculateProductTotals(processedVariants);
+
+  if (!isSupabaseConfigured || !supabase) {
+    if (existingId) {
+      const updated = local.map(p => {
+        if (p.id === existingId) {
+          return {
+            ...p,
+            name: formData.name.trim(),
+            subtitle: formData.subtitle?.trim() || '',
+            category: formData.category.trim(),
+            price: Number(formData.price) || 0,
+            imageUrl: formData.imageUrl?.trim() || p.imageUrl,
+            variants: processedVariants,
+            totalUnits,
+            totalAlerts,
+            updatedAt: now,
+          };
+        }
+        return p;
+      });
+      saveLocalProducts(updated);
+      return updated.find(p => p.id === existingId)!;
+    } else {
+      const nextSku = generateNextSku(local);
+      const newProd: Product = {
+        id: `prod-${Math.random().toString(36).substring(2, 9)}`,
+        sku: nextSku,
+        name: formData.name.trim(),
+        subtitle: formData.subtitle?.trim() || '',
+        category: formData.category.trim(),
+        price: Number(formData.price) || 0,
+        imageUrl: formData.imageUrl?.trim() || '',
+        variants: processedVariants,
+        totalUnits,
+        totalAlerts,
+        createdAt: now,
+        updatedAt: now,
+      };
+      saveLocalProducts([newProd, ...local]);
+      return newProd;
+    }
+  }
+
+  // Supabase save with Batch Insert
+  try {
+    let productId = existingId;
+    if (existingId) {
+      await supabase.from('products').update({
+        name: formData.name.trim(),
+        subtitle: formData.subtitle?.trim() || '',
+        category: formData.category.trim(),
+        price: Number(formData.price) || 0,
+        image_url: formData.imageUrl?.trim(),
+        updated_at: now,
+      }).eq('id', existingId);
+
+      await supabase.from('product_variants').delete().eq('product_id', existingId);
+    } else {
+      const allCurrent = await fetchAllProducts();
+      const nextSku = generateNextSku(allCurrent);
+
+      const { data: newRow, error: insErr } = await supabase.from('products').insert({
+        sku: nextSku,
+        name: formData.name.trim(),
+        subtitle: formData.subtitle?.trim() || '',
+        category: formData.category.trim(),
+        price: Number(formData.price) || 0,
+        image_url: formData.imageUrl?.trim(),
+      }).select('id').single();
+
+      if (insErr) throw insErr;
+      productId = newRow.id;
+    }
+
+    if (productId && processedVariants.length > 0) {
+      // High Performance Batch Insert in 1 roundtrip (Postgres best practice)
+      const variantRows = processedVariants.map(v => ({
+        product_id: productId,
+        color_name: v.colorName,
+        size_36: v.sizes['36'] || 0,
+        size_38: v.sizes['38'] || 0,
+        size_40: v.sizes['40'] || 0,
+        size_42: v.sizes['42'] || 0,
+        size_44: v.sizes['44'] || 0,
+      }));
+
+      await supabase.from('product_variants').insert(variantRows);
+    }
+
+    const all = await fetchAllProducts();
+    return all.find(p => p.id === productId) || saveProduct(formData, existingId);
+  } catch (err) {
+    console.error('Supabase save error, writing locally:', err);
+    return saveProduct(formData, existingId);
+  }
+}
+
+export async function adjustVariantStockQuantity(
+  productId: string,
+  variantId: string,
+  size: string,
+  delta: number,
+  reason: string = 'Manual Adjustment'
+): Promise<Product | null> {
+  const local = getLocalProducts();
+  const product = local.find(p => p.id === productId);
+  if (!product) return null;
+
+  const updatedVariants = product.variants.map(v => {
+    if (v.id === variantId) {
+      const cur = v.sizes[size] || 0;
+      const nextQty = Math.max(0, cur + delta);
+      const nextSizes = { ...v.sizes, [size]: nextQty };
+      const totalUnits = Object.values(nextSizes).reduce((a, b) => a + b, 0);
+      return {
+        ...v,
+        sizes: nextSizes,
+        totalUnits,
+      };
+    }
+    return v;
+  });
+
+  const { totalUnits, totalAlerts } = calculateProductTotals(updatedVariants);
+
+  const updatedProduct: Product = {
+    ...product,
+    variants: updatedVariants,
+    totalUnits,
+    totalAlerts,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updatedList = local.map(p => p.id === productId ? updatedProduct : p);
+  saveLocalProducts(updatedList);
+
+  const matchedVar = product.variants.find(v => v.id === variantId);
+  saveLocalHistory({
+    id: 'hist-' + Math.random().toString(36).substring(2, 9),
+    productId: product.id,
+    productName: product.name,
+    variantName: matchedVar?.colorName || 'Variant',
+    size,
+    changeAmount: delta,
+    resultingQuantity: (matchedVar?.sizes[size] || 0) + delta,
+    reason,
+    createdAt: new Date().toISOString(),
+  });
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const targetVar = updatedProduct.variants.find(v => v.id === variantId);
+      if (targetVar) {
+        await supabase.from('product_variants').update({
+          [`size_${size}`]: targetVar.sizes[size] || 0,
+        }).eq('id', variantId);
+
+        await supabase.from('stock_history').insert({
+          product_id: product.id,
+          variant_id: variantId,
+          size,
+          change_amount: delta,
+          resulting_quantity: (matchedVar?.sizes[size] || 0) + delta,
+          reason,
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase variant update error:', err);
+    }
+  }
+
+  return updatedProduct;
+}
+
+export async function deleteProduct(productId: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    const local = getLocalProducts();
+    saveLocalProducts(local.filter(p => p.id !== productId));
+    return true;
+  }
+
+  try {
+    await supabase.from('products').delete().eq('id', productId);
+    return true;
+  } catch (err) {
+    console.error('Failed to delete on Supabase:', err);
+    return false;
+  }
+}
+
+export async function uploadProductImage(file: File): Promise<string> {
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error('File size exceeds the 5MB limit.');
+  }
+
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image.');
+  }
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const rawExt = file.name.split('.').pop() || 'png';
+      const safeExt = rawExt.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'png';
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!uploadError) {
+        const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
+        if (data?.publicUrl) return data.publicUrl;
+      }
+    } catch (err) {
+      console.warn('Storage upload error:', err);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export function getStockHistory(): StockHistoryItem[] {
+  return getLocalHistory();
+}
