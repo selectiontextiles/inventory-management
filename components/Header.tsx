@@ -9,7 +9,7 @@ interface HeaderProps {
   onOpenHistory: () => void;
   onRefresh: () => void;
   isLoading: boolean;
-  totalProducts: number;
+  totalProducts?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +17,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory,
   onRefresh,
   isLoading,
-  totalProducts,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
@@ -35,14 +34,9 @@ export const Header: React.FC<HeaderProps> = ({
             />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 truncate">
-                Selection Textiles
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-500 font-medium">
-              <span>{totalProducts} Products</span>
-            </div>
+            <span className="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 truncate block">
+              Selection Textiles
+            </span>
           </div>
         </div>
 

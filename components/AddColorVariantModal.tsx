@@ -79,22 +79,43 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
               Initial Sizes (36 — 44)
             </label>
-            <div className="grid grid-cols-5 gap-1.5">
-              {STANDARD_SIZES.map(sz => (
-                <div key={sz} className="bg-slate-50 rounded-lg p-1.5 border border-slate-200 text-center">
-                  <span className="text-[10px] font-semibold text-slate-400 block">{sz}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={sizes[sz] ?? 0}
-                    onChange={(e) => handleSizeChange(sz, e.target.value)}
-                    className="w-full text-center font-mono font-bold text-xs py-0.5 bg-white border border-slate-200 rounded"
-                  />
-                </div>
-              ))}
+            <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
+              {STANDARD_SIZES.map(sz => {
+                const qty = sizes[sz] ?? 0;
+                return (
+                  <div key={sz} className="bg-slate-50 rounded-xl p-2 sm:p-2.5 border border-slate-200 text-center shadow-sm flex flex-col justify-between">
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      {sz}
+                    </span>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleSizeChange(sz, String(Math.max(0, qty - 1)))}
+                        className="w-6 h-7 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold transition select-none"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        value={qty}
+                        onChange={(e) => handleSizeChange(sz, e.target.value)}
+                        className="w-10 sm:w-12 h-7 text-center font-mono font-black num-tabular text-slate-900 text-sm sm:text-base bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSizeChange(sz, String(qty + 1))}
+                        className="w-6 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-bold transition select-none"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

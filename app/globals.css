@@ -67,3 +67,14 @@
 .num-tabular {
   font-feature-settings: "tnum" 1, "cv05" 1;
 }
+
+/* Clean Modern Number Inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
