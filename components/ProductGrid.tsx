@@ -13,6 +13,8 @@ interface ProductGridProps {
   onSelectVariant: (product: Product, variant: ColorVariant) => void;
   onOpenImagePreview: (imageUrl: string, title: string) => void;
   onAddVariant: (product: Product) => void;
+  isLowStockFilterActive?: boolean;
+  onResetLowStockFilter?: () => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -23,6 +25,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   onSelectVariant,
   onOpenImagePreview,
   onAddVariant,
+  isLowStockFilterActive = false,
+  onResetLowStockFilter,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -32,10 +36,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 12;
 
-  // Reset to first page when filtering or searching
+  // Reset to first page when filtering, searching, or low-stock filter changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [deferredSearchQuery, selectedCategory, sortBy]);
+  }, [deferredSearchQuery, selectedCategory, sortBy, isLowStockFilterActive]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -49,6 +53,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     const q = deferredSearchQuery.toLowerCase().trim();
 
     return products.filter((p) => {
+      // Low Stock filter
+      if (isLowStockFilterActive && p.totalAlerts === 0) {
+        return false;
+      }
+
       if (q) {
         const matchesName = p.name.toLowerCase().includes(q);
         const matchesSubtitle = (p.subtitle || '').toLowerCase().includes(q);
@@ -70,7 +79,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [products, deferredSearchQuery, selectedCategory, sortBy]);
+  }, [products, deferredSearchQuery, selectedCategory, sortBy, isLowStockFilterActive]);
 
   const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE) || 1;
   const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -97,9 +106,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     setSelectedCategory('All');
     setSortBy('default');
     setCurrentPage(1);
+    onResetLowStockFilter?.();
   };
 
-  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All' || sortBy !== 'default';
+  const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'All' || sortBy !== 'default' || isLowStockFilterActive;
 
   return (
     <div className="space-y-3">
@@ -190,16 +200,32 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       {/* Active Search & Filter Feedback Pill */}
       {hasActiveFilters && (
         <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 pt-0.5">
-          <span>
-            {searchQuery ? (
-              <>Results for <strong className="text-slate-800">&quot;{searchQuery}&quot;</strong> ({filteredProducts.length})</>
-            ) : (
-              <>Filtered by <strong className="text-slate-800">{selectedCategory}</strong> ({filteredProducts.length})</>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {isLowStockFilterActive && (
+              <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 font-semibold px-2 py-0.5 rounded-md text-[10px] border border-amber-200">
+                Low Stock Only
+                <button
+                  onClick={onResetLowStockFilter}
+                  className="hover:text-amber-950 p-0.5 text-amber-700"
+                  title="Remove low stock filter"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </span>
             )}
-          </span>
+            <span>
+              {searchQuery ? (
+                <>Results for <strong className="text-slate-800">&quot;{searchQuery}&quot;</strong> ({filteredProducts.length})</>
+              ) : selectedCategory !== 'All' ? (
+                <>Filtered by <strong className="text-slate-800">{selectedCategory}</strong> ({filteredProducts.length})</>
+              ) : isLowStockFilterActive ? (
+                <>Showing <strong className="text-slate-800">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'item' : 'items'} needing restock</>
+              ) : null}
+            </span>
+          </div>
           <button
             onClick={clearAllFilters}
-            className="text-slate-500 hover:text-slate-900 font-medium underline"
+            className="text-slate-500 hover:text-slate-900 font-medium underline shrink-0 ml-2"
           >
             Clear all
           </button>

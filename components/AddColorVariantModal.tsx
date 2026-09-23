@@ -19,7 +19,7 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
 }) => {
   const [colorName, setColorName] = useState('');
   const [sizes, setSizes] = useState<Record<string, number>>({
-    '36': 2, '38': 2, '40': 2, '42': 2, '44': 2,
+    '36': 0, '38': 0, '40': 0, '42': 0, '44': 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

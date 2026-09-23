@@ -25,6 +25,7 @@ export default function InventoryDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [history, setHistory] = useState<StockHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [metricFilter, setMetricFilter] = useState<'all' | 'low-stock'>('all');
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -99,22 +100,31 @@ export default function InventoryDashboard() {
     size: string,
     delta: number
   ) => {
-    // Instant optimistic update
+    // Instant optimistic update with accurate totalUnits and totalAlerts
     setProducts(prev => prev.map(p => {
       if (p.id === productId) {
+        let totalUnits = 0;
+        let totalAlerts = 0;
+
         const updatedVariants = p.variants.map(v => {
           if (v.id === variantId) {
             const cur = v.sizes[size] || 0;
             const nextQty = Math.max(0, cur + delta);
             const nextSizes = { ...v.sizes, [size]: nextQty };
-            const totalUnits = Object.values(nextSizes).reduce((a, b) => a + b, 0);
-            return { ...v, sizes: nextSizes, totalUnits };
+            const varTotal = Object.values(nextSizes).reduce((a, b) => a + b, 0);
+            return { ...v, sizes: nextSizes, totalUnits: varTotal };
           }
           return v;
         });
 
-        const totalUnits = updatedVariants.reduce((acc, v) => acc + v.totalUnits, 0);
-        return { ...p, variants: updatedVariants, totalUnits };
+        updatedVariants.forEach(v => {
+          totalUnits += v.totalUnits;
+          Object.values(v.sizes).forEach(q => {
+            if (q === 0) totalAlerts += 1;
+          });
+        });
+
+        return { ...p, variants: updatedVariants, totalUnits, totalAlerts };
       }
       return p;
     }));
@@ -136,6 +146,8 @@ export default function InventoryDashboard() {
 
     const result = await adjustVariantStockQuantity(productId, variantId, size, delta);
     if (result) {
+      // Sync confirmed state from Supabase
+      setProducts(prev => prev.map(p => p.id === result.id ? result : p));
       const hist = await getStockHistoryAsync();
       setHistory(hist);
       const v = result.variants.find(x => x.id === variantId);
@@ -183,7 +195,11 @@ export default function InventoryDashboard() {
       {/* Main Content */}
       <main className="max-w-4xl w-full mx-auto px-3 sm:px-6 py-2 sm:py-5 space-y-2.5 sm:space-y-4">
         {/* Summary Metrics */}
-        <MetricsOverview products={products} />
+        <MetricsOverview
+          products={products}
+          activeFilter={metricFilter}
+          onFilterChange={setMetricFilter}
+        />
 
         {/* Product Color Variants Grid */}
         <ProductGrid
@@ -194,6 +210,8 @@ export default function InventoryDashboard() {
           onSelectVariant={handleSelectVariant}
           onOpenImagePreview={(url, title) => setPreviewImage({ url, title })}
           onAddVariant={(prod) => setAddingVariantProduct(prod)}
+          isLowStockFilterActive={metricFilter === 'low-stock'}
+          onResetLowStockFilter={() => setMetricFilter('all')}
         />
       </main>
 

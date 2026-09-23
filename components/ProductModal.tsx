@@ -52,6 +52,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setImageUrl(productToEdit.imageUrl || '');
       setVariants(
         productToEdit.variants.map(v => ({
+          id: v.id,
           colorName: v.colorName,
           sizes: { ...v.sizes },
         }))
@@ -60,12 +61,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setName('');
       setSubtitle('');
       setCategory('Ethnic Sets');
-      setPrice(1850);
+      setPrice('');
       setImageUrl('');
       setVariants([
-        { colorName: 'T.Blue / Sh No.02', sizes: { '36': 1, '38': 2, '40': 3, '42': 2, '44': 3 } },
-        { colorName: 'Orange / Sh No.03', sizes: { '36': 1, '38': 1, '40': 0, '42': 1, '44': 2 } },
-        { colorName: 'Green / Shade No. 04', sizes: { '36': 3, '38': 5, '40': 1, '42': 2, '44': 1 } },
+        { colorName: 'Shade No.01', sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 } },
       ]);
     }
     setErrorMessage('');

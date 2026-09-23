@@ -44,6 +44,7 @@ export interface ProductFormData {
   price?: number;
   imageUrl?: string;
   variants: {
+    id?: string;
     colorName: string;
     sizes: Record<string, number>;
   }[];

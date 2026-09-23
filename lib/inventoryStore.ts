@@ -239,6 +239,9 @@ export async function fetchAllProducts(): Promise<Product[]> {
 
     return prodData.map((p: any) => {
       const rawVariants = Array.isArray(p.product_variants) ? p.product_variants : [];
+      // Sort variants deterministically by creation time
+      rawVariants.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+
       const variants: ColorVariant[] = rawVariants.map((row: any) => {
         const cleanSizes: Record<string, number> = {
           '36': Math.max(0, row.size_36 || 0),
@@ -319,7 +322,8 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
           size_38,
           size_40,
           size_42,
-          size_44
+          size_44,
+          created_at
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -332,6 +336,8 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
 
     const products = prodData.map((p: any) => {
       const rawVariants = Array.isArray(p.product_variants) ? p.product_variants : [];
+      rawVariants.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+
       const variants: ColorVariant[] = rawVariants.map((row: any) => {
         const cleanSizes: Record<string, number> = {
           '36': Math.max(0, row.size_36 || 0),
@@ -392,7 +398,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
     const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
 
     return {
-      id: `var-${Date.now()}-${idx}`,
+      id: v.id || `var-${Date.now()}-${idx}`,
       colorName: v.colorName.trim() || `Shade No.${idx + 1}`,
       sizes: cleanSizes,
       totalUnits,
@@ -443,7 +449,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
     }
   }
 
-  // Supabase save with Batch Insert
+  // Supabase save with Non-Destructive Upsert (Preserves stock history foreign keys)
   try {
     let productId = existingId;
     if (existingId) {
@@ -456,7 +462,42 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         updated_at: now,
       }).eq('id', existingId);
 
-      await supabase.from('product_variants').delete().eq('product_id', existingId);
+      const keptVariantIds: string[] = [];
+
+      for (const v of processedVariants) {
+        if (v.id && !v.id.startsWith('var-')) {
+          keptVariantIds.push(v.id);
+          await supabase.from('product_variants').update({
+            color_name: v.colorName,
+            size_36: v.sizes['36'] || 0,
+            size_38: v.sizes['38'] || 0,
+            size_40: v.sizes['40'] || 0,
+            size_42: v.sizes['42'] || 0,
+            size_44: v.sizes['44'] || 0,
+            updated_at: now,
+          }).eq('id', v.id);
+        } else {
+          const { data: insRow } = await supabase.from('product_variants').insert({
+            product_id: existingId,
+            color_name: v.colorName,
+            size_36: v.sizes['36'] || 0,
+            size_38: v.sizes['38'] || 0,
+            size_40: v.sizes['40'] || 0,
+            size_42: v.sizes['42'] || 0,
+            size_44: v.sizes['44'] || 0,
+          }).select('id').single();
+          if (insRow) keptVariantIds.push(insRow.id);
+        }
+      }
+
+      // Delete only variants removed by the user
+      if (keptVariantIds.length > 0) {
+        await supabase
+          .from('product_variants')
+          .delete()
+          .eq('product_id', existingId)
+          .not('id', 'in', `(${keptVariantIds.join(',')})`);
+      }
     } else {
       const allCurrent = await fetchAllProducts();
       const nextSku = generateNextSku(allCurrent);
@@ -472,21 +513,20 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
 
       if (insErr) throw insErr;
       productId = newRow.id;
-    }
 
-    if (productId && processedVariants.length > 0) {
-      // High Performance Batch Insert in 1 roundtrip (Postgres best practice)
-      const variantRows = processedVariants.map(v => ({
-        product_id: productId,
-        color_name: v.colorName,
-        size_36: v.sizes['36'] || 0,
-        size_38: v.sizes['38'] || 0,
-        size_40: v.sizes['40'] || 0,
-        size_42: v.sizes['42'] || 0,
-        size_44: v.sizes['44'] || 0,
-      }));
+      if (productId && processedVariants.length > 0) {
+        const variantRows = processedVariants.map(v => ({
+          product_id: productId,
+          color_name: v.colorName,
+          size_36: v.sizes['36'] || 0,
+          size_38: v.sizes['38'] || 0,
+          size_40: v.sizes['40'] || 0,
+          size_42: v.sizes['42'] || 0,
+          size_44: v.sizes['44'] || 0,
+        }));
 
-      await supabase.from('product_variants').insert(variantRows);
+        await supabase.from('product_variants').insert(variantRows);
+      }
     }
 
     const all = await fetchAllProducts();
@@ -504,6 +544,132 @@ export async function adjustVariantStockQuantity(
   delta: number,
   reason: string = 'Manual Adjustment'
 ): Promise<Product | null> {
+  const sizeCol = `size_${size}` as 'size_36' | 'size_38' | 'size_40' | 'size_42' | 'size_44';
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // 1. Fetch current variant row from Supabase
+      const { data: varData, error: varErr } = await supabase
+        .from('product_variants')
+        .select(`
+          id,
+          product_id,
+          color_name,
+          color_hex,
+          size_36,
+          size_38,
+          size_40,
+          size_42,
+          size_44
+        `)
+        .eq('id', variantId)
+        .single();
+
+      if (varErr || !varData) {
+        console.error('Supabase fetch variant error:', varErr);
+        throw varErr || new Error('Variant not found');
+      }
+
+      const currentQty = Number((varData as any)[sizeCol]) || 0;
+      const nextQty = Math.max(0, currentQty + delta);
+      const actualDelta = nextQty - currentQty;
+
+      // 2. Direct single-query update on product_variants
+      const { error: updateErr } = await supabase
+        .from('product_variants')
+        .update({ [sizeCol]: nextQty, updated_at: new Date().toISOString() })
+        .eq('id', variantId);
+
+      if (updateErr) {
+        console.error('Supabase update variant error:', updateErr);
+        throw updateErr;
+      }
+
+      // 3. Insert into stock_history table
+      if (actualDelta !== 0) {
+        await supabase.from('stock_history').insert({
+          product_id: varData.product_id,
+          variant_id: variantId,
+          size,
+          change_amount: actualDelta,
+          resulting_quantity: nextQty,
+          reason,
+        });
+      }
+
+      // 4. Return updated product from Supabase
+      const { data: prodData, error: prodErr } = await supabase
+        .from('products')
+        .select(`
+          id,
+          sku,
+          name,
+          subtitle,
+          category,
+          price,
+          image_url,
+          created_at,
+          updated_at,
+          product_variants (
+            id,
+            color_name,
+            color_hex,
+            size_36,
+            size_38,
+            size_40,
+            size_42,
+            size_44
+          )
+        `)
+        .eq('id', varData.product_id)
+        .single();
+
+      if (prodErr || !prodData) {
+        console.warn('Supabase fetch updated product failed:', prodErr);
+        return null;
+      }
+
+      const rawVariants = Array.isArray(prodData.product_variants) ? prodData.product_variants : [];
+      const variants: ColorVariant[] = rawVariants.map((row: any) => {
+        const cleanSizes: Record<string, number> = {
+          '36': Math.max(0, row.size_36 || 0),
+          '38': Math.max(0, row.size_38 || 0),
+          '40': Math.max(0, row.size_40 || 0),
+          '42': Math.max(0, row.size_42 || 0),
+          '44': Math.max(0, row.size_44 || 0),
+        };
+        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+        return {
+          id: row.id,
+          colorName: row.color_name,
+          colorHex: row.color_hex || '',
+          sizes: cleanSizes,
+          totalUnits,
+        };
+      });
+
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+
+      return {
+        id: prodData.id,
+        sku: prodData.sku || `ST-${prodData.id.slice(0, 4)}`,
+        name: prodData.name,
+        subtitle: prodData.subtitle || '',
+        category: prodData.category || 'General',
+        price: Number(prodData.price) || 0,
+        imageUrl: prodData.image_url || '',
+        variants,
+        totalUnits,
+        totalAlerts,
+        createdAt: prodData.created_at,
+        updatedAt: prodData.updated_at,
+      };
+    } catch (err) {
+      console.error('Supabase adjust stock failed:', err);
+    }
+  }
+
+  // Fallback for offline / local mode
   const local = getLocalProducts();
   const product = local.find(p => p.id === productId);
   if (!product) return null;
@@ -548,28 +714,6 @@ export async function adjustVariantStockQuantity(
     reason,
     createdAt: new Date().toISOString(),
   });
-
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const targetVar = updatedProduct.variants.find(v => v.id === variantId);
-      if (targetVar) {
-        await supabase.from('product_variants').update({
-          [`size_${size}`]: targetVar.sizes[size] || 0,
-        }).eq('id', variantId);
-
-        await supabase.from('stock_history').insert({
-          product_id: product.id,
-          variant_id: variantId,
-          size,
-          change_amount: delta,
-          resulting_quantity: (matchedVar?.sizes[size] || 0) + delta,
-          reason,
-        });
-      }
-    } catch (err) {
-      console.warn('Supabase variant update error:', err);
-    }
-  }
 
   return updatedProduct;
 }

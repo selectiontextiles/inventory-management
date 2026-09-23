@@ -100,43 +100,48 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
             </button>
 
             {isMenuOpen && (
-              <div
-                className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20 text-xs font-medium"
-                onMouseLeave={() => setIsMenuOpen(false)}
-              >
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onAddVariant(product);
-                  }}
-                  className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setIsMenuOpen(false)} 
+                />
+                <div
+                  className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20 text-xs font-medium animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <Plus className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Add Color/Shade</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onEdit(product);
-                  }}
-                  className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                >
-                  <Edit2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Edit Details</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    if (confirm(`Delete ${product.name}?`)) {
-                      onDelete(product.id);
-                    }
-                  }}
-                  className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
-              </div>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onAddVariant(product);
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Add Color/Shade</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onEdit(product);
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Edit Details</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      if (confirm(`Delete ${product.name}?`)) {
+                        onDelete(product.id);
+                      }
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
