@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="tap-press h-8 sm:h-9 px-2.5 sm:px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs sm:text-sm transition flex items-center gap-1 sm:gap-1.5"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>+ New</span>
+            <span>New</span>
             <span className="hidden sm:inline">&nbsp;Product</span>
           </button>
         </div>
