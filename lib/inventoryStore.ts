@@ -228,8 +228,13 @@ export async function fetchAllProducts(): Promise<Product[]> {
       `)
       .order('created_at', { ascending: false });
 
-    if (prodErr || !prodData || prodData.length === 0) {
+    if (prodErr) {
+      console.warn('Supabase fetch failed, falling back to local cache:', prodErr);
       return getLocalProducts();
+    }
+
+    if (!prodData || prodData.length === 0) {
+      return [];
     }
 
     return prodData.map((p: any) => {
@@ -684,6 +689,47 @@ export async function uploadProductImage(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(compressedFile);
   });
+}
+
+export async function getStockHistoryAsync(): Promise<StockHistoryItem[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return getLocalHistory();
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('stock_history')
+      .select(`
+        id,
+        product_id,
+        variant_id,
+        size,
+        change_amount,
+        resulting_quantity,
+        reason,
+        created_at,
+        products (name),
+        product_variants (color_name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(150);
+
+    if (error || !data) return getLocalHistory();
+
+    return data.map((row: any) => ({
+      id: row.id,
+      productId: row.product_id,
+      productName: row.products?.name || 'Product',
+      variantName: row.product_variants?.color_name || 'Variant',
+      size: row.size,
+      changeAmount: row.change_amount,
+      resultingQuantity: row.resulting_quantity,
+      reason: row.reason,
+      createdAt: row.created_at,
+    }));
+  } catch {
+    return getLocalHistory();
+  }
 }
 
 export function getStockHistory(): StockHistoryItem[] {

@@ -10,7 +10,7 @@ import {
   saveProduct, 
   adjustVariantStockQuantity, 
   deleteProduct, 
-  getStockHistory 
+  getStockHistoryAsync 
 } from '@/lib/inventoryStore';
 import { Product, ColorVariant, ProductFormData, StockHistoryItem } from '@/lib/types';
 
@@ -49,9 +49,12 @@ export default function InventoryDashboard() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchAllProducts();
-      setProducts(data);
-      setHistory(getStockHistory());
+      const [prodData, histData] = await Promise.all([
+        fetchAllProducts(),
+        getStockHistoryAsync(),
+      ]);
+      setProducts(prodData);
+      setHistory(histData);
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +136,8 @@ export default function InventoryDashboard() {
 
     const result = await adjustVariantStockQuantity(productId, variantId, size, delta);
     if (result) {
-      setHistory(getStockHistory());
+      const hist = await getStockHistoryAsync();
+      setHistory(hist);
       const v = result.variants.find(x => x.id === variantId);
       showToast(`${v?.colorName || 'Shade'} [${size}]: ${delta > 0 ? `+${delta}` : delta} pcs`);
     }
