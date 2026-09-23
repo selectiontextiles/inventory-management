@@ -183,7 +183,6 @@ export default function InventoryDashboard() {
       name: prod.name,
       subtitle: prod.subtitle,
       category: prod.category,
-      price: prod.price,
       imageUrl: prod.imageUrl,
       variants: [...existingVars, { colorName, sizes }],
     }, prod.id);

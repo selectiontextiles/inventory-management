@@ -16,7 +16,6 @@ export interface Product {
   name: string; // e.g. "Uathayam 2in1 Sets"
   subtitle?: string; // e.g. "Divine Fixit Full Shirt Dhoti Set"
   category: string;
-  price?: number;
   imageUrl?: string;
   variants: ColorVariant[];
   totalUnits: number;
@@ -41,7 +40,6 @@ export interface ProductFormData {
   name: string;
   subtitle?: string;
   category: string;
-  price?: number;
   imageUrl?: string;
   variants: {
     id?: string;

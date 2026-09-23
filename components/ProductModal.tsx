@@ -36,7 +36,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState('');
-  const [price, setPrice] = useState<number | string>('');
   const [imageUrl, setImageUrl] = useState('');
   const [variants, setVariants] = useState<{ id?: string; colorName: string; sizes: Record<string, number> }[]>([
     { colorName: 'Shade No.01', sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 } },
@@ -72,7 +71,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setName(productToEdit.name);
       setSubtitle(productToEdit.subtitle || '');
       setCategory(productToEdit.category || 'Ethnic Sets');
-      setPrice(productToEdit.price || '');
       setImageUrl(productToEdit.imageUrl || '');
       setVariants(
         productToEdit.variants.map(v => ({
@@ -85,7 +83,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setName('');
       setSubtitle('');
       setCategory('Ethnic Sets');
-      setPrice('');
       setImageUrl('');
       setVariants([
         { colorName: 'Shade No.01', sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 } },
@@ -163,7 +160,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         name,
         subtitle,
         category,
-        price: Number(price) || 0,
         imageUrl,
         variants,
       }, productToEdit ? productToEdit.id : undefined);
@@ -176,15 +172,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div 
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
       <div 
-        className="bg-white w-full sm:max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-200 animate-in fade-in duration-150"
+        className="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh] border border-slate-200 animate-in fade-in slide-in-from-bottom-3 duration-150 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
               {productToEdit ? 'Edit Product & Color Shades' : 'Add New Textile Product'}
             </h2>
             <p className="text-xs text-slate-500">
@@ -200,10 +199,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4">
+        {/* Scrollable Form Body */}
+        <form 
+          id="product-form"
+          onSubmit={handleSubmit} 
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+        >
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 flex items-center gap-2">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
@@ -221,7 +224,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Uathayam 2in1 Sets"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white transition"
               />
             </div>
 
@@ -234,13 +237,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder="e.g. Divine Fixit Full Shirt Dhoti Set"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white transition"
               />
             </div>
           </div>
 
-          {/* Category & Image Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+          {/* Category & Compact Photo Upload Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Category Dropdown with inline custom add */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -275,14 +279,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         setNewCategoryInput('');
                       }
                     }}
-                    placeholder="Type category name..."
-                    className="w-full px-3 py-2 bg-white border-2 border-slate-900 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none placeholder:text-slate-400"
+                    placeholder="Type category..."
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-900 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none placeholder:text-slate-400"
                   />
                   <button
                     type="button"
                     onClick={handleConfirmNewCategory}
                     disabled={!newCategoryInput.trim()}
-                    className="px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 disabled:opacity-40 transition shrink-0"
+                    className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 disabled:opacity-40 transition shrink-0"
                   >
                     Add
                   </button>
@@ -292,7 +296,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       setIsAddingCustomCategory(false);
                       setNewCategoryInput('');
                     }}
-                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition shrink-0"
+                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition shrink-0"
                     title="Cancel"
                   >
                     <X className="w-4 h-4" />
@@ -308,7 +312,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       setCategory(e.target.value);
                     }
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white cursor-pointer transition"
                 >
                   {allCategories.map((c) => (
                     <option key={c} value={c}>
@@ -322,102 +326,113 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               )}
             </div>
 
-            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5">
-              <div className="relative w-10 h-10 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                {imageUrl ? (
-                  <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
-                ) : (
-                  <ImageIcon className="w-4 h-4 text-slate-400" />
-                )}
-              </div>
-              <div className="flex-1">
-                <label className="tap-press cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-semibold text-slate-700">
-                  <Upload className="w-3 h-3" />
-                  <span>Upload Photo</span>
-                  <input type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" disabled={isUploading} />
+            {/* Streamlined Photo Upload */}
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                Reference Photo
+              </label>
+              <div className="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2.5 h-[42px]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="relative w-7 h-7 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center border border-slate-300/60">
+                    {imageUrl ? (
+                      <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                    ) : (
+                      <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-slate-600 truncate">
+                    {imageUrl ? 'Photo uploaded' : 'No photo'}
+                  </span>
+                </div>
+
+                <label className="tap-press cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shrink-0">
+                  <Upload className="w-3 h-3 text-slate-500" />
+                  <span>{isUploading ? 'Uploading...' : imageUrl ? 'Change' : 'Upload'}</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageFileChange} 
+                    className="hidden" 
+                    disabled={isUploading} 
+                  />
                 </label>
               </div>
             </div>
           </div>
 
-        {/* Color / Shade Variants Matrix List */}
-          <div className="space-y-3 pt-1">
+          {/* Color / Shade Variants Matrix List */}
+          <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Color / Shade Variants & Sizes (36 — 44)
               </label>
               <button
                 type="button"
                 onClick={handleAddVariantRow}
-                className="tap-press text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                className="tap-press text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Color Row</span>
+                <span>Add Shade Row</span>
               </button>
             </div>
 
             <div className="space-y-3">
               {variants.map((variant, varIdx) => {
                 return (
-                  <div key={varIdx} className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div 
+                    key={varIdx} 
+                    className="p-3.5 sm:p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3 shadow-xs"
+                  >
+                    {/* Shade Header with Number Badge and Delete Action */}
                     <div className="flex items-center justify-between gap-2.5">
-                      <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
+                          Shade {varIdx + 1}
+                        </span>
                         <input
                           type="text"
                           required
                           value={variant.colorName}
                           onChange={(e) => handleVariantNameChange(varIdx, e.target.value)}
-                          placeholder="e.g. Sand Beige / Shade No.01"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 shadow-sm"
+                          placeholder="e.g. Royal Blue / Shade No.01"
+                          className="flex-1 min-w-0 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 transition"
                         />
                       </div>
+
                       {variants.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveVariantRow(varIdx)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Remove color"
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition shrink-0"
+                          title="Remove shade"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
 
-                    {/* Sizes inputs (36, 38, 40, 42, 44) */}
-                    <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
+                    {/* Touch-Friendly 5-Column Size Inputs (36, 38, 40, 42, 44) */}
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                       {STANDARD_SIZES.map((sz) => {
                         const qty = variant.sizes[sz] ?? 0;
                         return (
                           <div 
                             key={sz} 
-                            className="bg-white rounded-xl p-2 sm:p-2.5 border border-slate-200/90 text-center shadow-sm flex flex-col justify-between"
+                            className="bg-white rounded-xl p-2 border border-slate-200 text-center shadow-xs flex flex-col justify-between items-center"
                           >
-                            <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                            <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
                               {sz}
                             </span>
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleVariantSizeChange(varIdx, sz, String(Math.max(0, qty - 1)))}
-                                className="w-6 h-7 sm:w-7 sm:h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold transition select-none"
-                              >
-                                -
-                              </button>
-                              <input
-                                type="number"
-                                min="0"
-                                value={qty}
-                                onChange={(e) => handleVariantSizeChange(varIdx, sz, e.target.value)}
-                                className="w-10 sm:w-12 h-7 sm:h-8 text-center font-mono font-black num-tabular text-slate-900 text-sm sm:text-base bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900 focus:bg-white"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleVariantSizeChange(varIdx, sz, String(qty + 1))}
-                                className="w-6 h-7 sm:w-7 sm:h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center text-xs font-bold transition select-none"
-                              >
-                                +
-                              </button>
-                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={qty === 0 ? '' : qty}
+                              placeholder="0"
+                              onChange={(e) => handleVariantSizeChange(varIdx, sz, e.target.value)}
+                              className="w-full h-8 sm:h-9 text-center font-mono font-extrabold text-base sm:text-sm text-slate-900 bg-slate-50/60 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900 focus:bg-white transition num-tabular placeholder:text-slate-300"
+                            />
                           </div>
                         );
                       })}
@@ -427,26 +442,27 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               })}
             </div>
           </div>
-
-          {/* Submit */}
-          <div className="pt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="tap-press px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="tap-press px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <Check className="w-3.5 h-3.5" />
-              <span>{productToEdit ? 'Save Changes' : 'Create Product'}</span>
-            </button>
-          </div>
         </form>
+
+        {/* Sticky Action Footer */}
+        <div className="px-5 py-3.5 border-t border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-end gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="tap-press px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="product-form"
+            disabled={isSaving}
+            className="tap-press px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+          >
+            <Check className="w-4 h-4" />
+            <span>{productToEdit ? 'Save Changes' : 'Create Product'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

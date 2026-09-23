@@ -23,7 +23,6 @@ create table if not exists public.products (
   name text not null,
   subtitle text not null default '',
   category text not null default 'General',
-  price numeric(10, 2) not null default 0.00 check (price >= 0),
   image_url text not null default '',
   created_at timestamptz not null default clock_timestamp(),
   updated_at timestamptz not null default clock_timestamp()

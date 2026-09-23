@@ -3,7 +3,7 @@
 -- ==============================================================================
 
 -- 1. Insert Products
-insert into public.products (id, sku, name, subtitle, category, price, image_url)
+insert into public.products (id, sku, name, subtitle, category, image_url)
 values 
   (
     'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
@@ -11,7 +11,6 @@ values
     'Uathayam 2in1 Sets',
     'Divine Fixit Full Shirt Dhoti Set',
     'Ethnic Sets',
-    1850.00,
     'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=800&auto=format&fit=crop&q=80'
   ),
   (
@@ -20,7 +19,6 @@ values
     'Selection Linen Classic Shirts',
     'Pure French Normandy Linen 60 Lea',
     'Linen',
-    2450.00,
     'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80'
   )
 on conflict (sku) do nothing;
