@@ -13,6 +13,7 @@ import {
   getStockHistoryAsync 
 } from '@/lib/inventoryStore';
 import { Product, ColorVariant, ProductFormData, StockHistoryItem } from '@/lib/types';
+import { Toast, ToastData } from '@/components/Toast';
 
 // Dynamic imports for interactive modals to minimize initial JS bundle size (Vercel best practice)
 const ProductModal = dynamic(() => import('@/components/ProductModal').then(m => m.ProductModal), { ssr: false });
@@ -38,16 +39,13 @@ export default function InventoryDashboard() {
 
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
+  const showToast = (message: string, title?: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
+    setToast({ message, title, type });
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isManualRefresh = false) => {
     setIsLoading(true);
     try {
       const [prodData, histData] = await Promise.all([
@@ -56,6 +54,9 @@ export default function InventoryDashboard() {
       ]);
       setProducts(prodData);
       setHistory(histData);
+      if (isManualRefresh) {
+        showToast('Catalog and stock levels synced with database', 'Synced', 'info');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,14 +79,18 @@ export default function InventoryDashboard() {
 
   const handleSaveProduct = async (formData: ProductFormData, existingId?: string) => {
     const saved = await saveProduct(formData, existingId);
-    showToast(existingId ? `Updated ${saved.name}` : `Added ${saved.name}`);
+    showToast(
+      saved.name,
+      existingId ? 'Product Updated' : 'New Product Added',
+      'success'
+    );
     await loadData();
   };
 
   const handleDelete = async (id: string) => {
     const success = await deleteProduct(id);
     if (success) {
-      showToast('Product deleted');
+      showToast('Product removed from catalog', 'Deleted', 'info');
       await loadData();
     }
   };
@@ -151,7 +156,12 @@ export default function InventoryDashboard() {
       const hist = await getStockHistoryAsync();
       setHistory(hist);
       const v = result.variants.find(x => x.id === variantId);
-      showToast(`${v?.colorName || 'Shade'} [${size}]: ${delta > 0 ? `+${delta}` : delta} pcs`);
+      const currentSizeQty = v?.sizes[size] ?? 0;
+      showToast(
+        `${v?.colorName || 'Shade'} • Size ${size}: ${delta > 0 ? `+${delta}` : delta} (Current: ${currentSizeQty} pcs)`,
+        'Stock Updated',
+        'success'
+      );
     }
   };
 
@@ -164,6 +174,7 @@ export default function InventoryDashboard() {
     if (!prod) return;
 
     const existingVars = prod.variants.map(v => ({
+      id: v.id,
       colorName: v.colorName,
       sizes: v.sizes,
     }));
@@ -177,7 +188,7 @@ export default function InventoryDashboard() {
       variants: [...existingVars, { colorName, sizes }],
     }, prod.id);
 
-    showToast(`Added ${colorName}`);
+    showToast(`Added ${colorName} to ${prod.name}`, 'Shade Added', 'success');
     await loadData();
   };
 
@@ -187,7 +198,7 @@ export default function InventoryDashboard() {
       <Header
         onAddNew={handleAddNew}
         onOpenHistory={() => setIsHistoryDrawerOpen(true)}
-        onRefresh={loadData}
+        onRefresh={() => loadData(true)}
         isLoading={isLoading}
         totalProducts={products.length}
       />
@@ -255,13 +266,8 @@ export default function InventoryDashboard() {
         products={products}
       />
 
-      {/* Floating Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Toast Notification Container */}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* Minimal Clean Footer */}
       <footer className="mt-8 border-t border-slate-200/80 py-4 text-center text-[11px] text-slate-400">
