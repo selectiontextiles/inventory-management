@@ -57,10 +57,12 @@ export const VariantStepperModal: React.FC<VariantStepperModalProps> = ({
               {product.name}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span
-                className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shrink-0"
-                style={variant.colorHex ? { backgroundColor: variant.colorHex } : undefined}
-              />
+              {variant.colorHex ? (
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shrink-0 shadow-xs"
+                  style={{ backgroundColor: variant.colorHex }}
+                />
+              ) : null}
               <h3 className="font-extrabold text-slate-900 text-base sm:text-lg truncate max-w-[280px] sm:max-w-md">
                 {variant.colorName}
               </h3>

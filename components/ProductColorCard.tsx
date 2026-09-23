@@ -153,11 +153,13 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
               {/* Top line of variant: Radio Circle + Shade Name + Total Units */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  {/* Radio circle / Color Swatch */}
-                  <span
-                    className="w-3.5 h-3.5 rounded-full border border-slate-400 shrink-0 inline-block group-hover:border-slate-800 transition"
-                    style={variant.colorHex ? { backgroundColor: variant.colorHex } : undefined}
-                  />
+                  {/* Color Swatch (Only if color hex exists) */}
+                  {variant.colorHex ? (
+                    <span
+                      className="w-3 h-3 rounded-full border border-slate-300 shrink-0 inline-block shadow-xs"
+                      style={{ backgroundColor: variant.colorHex }}
+                    />
+                  ) : null}
 
                   {/* Color / Shade Name */}
                   <span className="font-semibold text-slate-900 text-sm sm:text-base tracking-tight truncate">
