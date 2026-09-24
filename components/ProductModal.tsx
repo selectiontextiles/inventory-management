@@ -363,30 +363,30 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           {/* Color / Shade Variants Matrix List */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <label className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">
                 Color / Shade Variants & Sizes (36 — 44)
               </label>
               <button
                 type="button"
                 onClick={handleAddVariantRow}
-                className="tap-press text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                className="tap-press text-xs sm:text-sm font-bold text-slate-900 hover:underline flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Add Shade Row</span>
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {variants.map((variant, varIdx) => {
                 return (
                   <div 
                     key={varIdx} 
-                    className="p-3.5 sm:p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3 shadow-xs"
+                    className="p-3.5 sm:p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3.5 shadow-xs"
                   >
                     {/* Shade Header with Number Badge and Delete Action */}
                     <div className="flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
+                        <span className="text-xs sm:text-sm font-bold text-slate-700 bg-slate-200/90 px-2.5 py-1 rounded-lg shrink-0">
                           Shade {varIdx + 1}
                         </span>
                         <input
@@ -395,7 +395,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           value={variant.colorName}
                           onChange={(e) => handleVariantNameChange(varIdx, e.target.value)}
                           placeholder="e.g. Royal Blue / Shade No.01"
-                          className="flex-1 min-w-0 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-base sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 transition"
+                          className="flex-1 min-w-0 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-base font-bold text-slate-900 focus:outline-none focus:border-slate-900 transition"
                         />
                       </div>
 
@@ -412,17 +412,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     </div>
 
                     {/* Touch-Friendly Vertical Stacked Size Steppers (36, 38, 40, 42, 44) */}
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
                       {STANDARD_SIZES.map((sz) => {
                         const qty = variant.sizes[sz] ?? 0;
                         return (
                           <div 
                             key={sz} 
-                            className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col items-center overflow-hidden transition focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900"
+                            className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col items-center overflow-hidden transition focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900"
                           >
                             {/* Size Header Label */}
-                            <div className="w-full bg-slate-100/80 border-b border-slate-200/80 py-0.5 sm:py-1 text-center select-none">
-                              <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                            <div className="w-full bg-slate-100 border-b border-slate-200 py-1 text-center select-none">
+                              <span className="text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider block">
                                 {sz}
                               </span>
                             </div>
@@ -431,11 +431,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleVariantSizeChange(varIdx, sz, String(qty + 1))}
-                              className="w-full h-7 sm:h-8 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition select-none"
+                              className="w-full h-8 sm:h-9 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:bg-slate-200 transition select-none"
                               title={`Increase size ${sz}`}
                               aria-label={`Increase size ${sz}`}
                             >
-                              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <Plus className="w-4 h-4 stroke-[2.5]" />
                             </button>
 
                             {/* Direct Quantity Input (Middle) */}
@@ -447,7 +447,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                               value={qty === 0 ? '' : qty}
                               placeholder="0"
                               onChange={(e) => handleVariantSizeChange(varIdx, sz, e.target.value)}
-                              className="w-full h-7 sm:h-8 text-center font-mono font-black text-sm sm:text-base text-slate-900 bg-slate-50/60 border-y border-slate-200/70 focus:outline-none focus:bg-white transition num-tabular placeholder:text-slate-300"
+                              className="w-full h-8 sm:h-9 text-center font-mono font-black text-base sm:text-lg text-slate-900 bg-slate-50/70 border-y border-slate-200/80 focus:outline-none focus:bg-white transition num-tabular placeholder:text-slate-300"
                             />
 
                             {/* - Button (Bottom) */}
@@ -455,11 +455,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                               type="button"
                               onClick={() => handleVariantSizeChange(varIdx, sz, String(Math.max(0, qty - 1)))}
                               disabled={qty <= 0}
-                              className="w-full h-7 sm:h-8 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-20 disabled:cursor-not-allowed transition select-none"
+                              className="w-full h-8 sm:h-9 flex items-center justify-center text-slate-800 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-20 disabled:cursor-not-allowed transition select-none"
                               title={`Decrease size ${sz}`}
                               aria-label={`Decrease size ${sz}`}
                             >
-                              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <Minus className="w-4 h-4 stroke-[2.5]" />
                             </button>
                           </div>
                         );
@@ -473,11 +473,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         </form>
 
         {/* Sticky Action Footer */}
-        <div className="px-5 py-3.5 border-t border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-end gap-2.5 shrink-0">
+        <div className="px-5 py-3.5 sm:py-4 border-t border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-end gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="tap-press px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold transition"
+            className="tap-press px-4 py-2.5 sm:px-5 sm:py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-bold transition"
           >
             Cancel
           </button>
@@ -485,10 +485,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             type="submit"
             form="product-form"
             disabled={isSaving}
-            className="tap-press px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+            className="tap-press px-5 py-2.5 sm:px-6 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-50"
           >
-            <Check className="w-4 h-4" />
-            <span>{productToEdit ? 'Save Changes' : 'Create Product'}</span>
+            <Check className="w-4 h-4 stroke-[2.5]" />
+            <span>{isSaving ? 'Saving...' : productToEdit ? 'Save Changes' : 'Create Product'}</span>
           </button>
         </div>
       </div>

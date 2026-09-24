@@ -110,44 +110,44 @@ export const StockHistoryDrawer: React.FC<StockHistoryDrawerProps> = ({
         </div>
 
         {/* History Ledger List */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
           {currentHistory.length > 0 ? (
             currentHistory.map((item) => {
               const isInward = item.changeAmount > 0;
               return (
                 <div
                   key={item.id}
-                  className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1"
+                  className="p-3.5 bg-white rounded-xl border border-slate-200 text-sm space-y-1.5"
                 >
-                  <div className="flex items-center justify-between font-semibold">
-                    <span className="text-slate-900 font-medium text-xs truncate max-w-[200px]">
-                      {item.productName} • <span className="text-slate-500 font-normal">{item.variantName}</span>
+                  <div className="flex items-center justify-between font-semibold gap-2">
+                    <span className="text-slate-900 font-bold text-sm truncate max-w-[220px]">
+                      {item.productName} • <span className="text-slate-600 font-medium">{item.variantName}</span>
                     </span>
                     <span
-                      className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded font-mono font-bold text-[11px] ${
+                      className={`inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-lg font-mono font-bold text-xs ${
                         isInward
                           ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                           : 'bg-rose-50 text-rose-800 border border-rose-200'
                       }`}
                     >
-                      {isInward ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                      {isInward ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                       <span>{isInward ? `+${item.changeAmount}` : item.changeAmount} pcs</span>
                     </span>
                   </div>
 
-                  <div className="text-slate-600 text-[11px] pt-0.5">
-                    Size <strong className="text-slate-900">{item.size}</strong> • {item.reason}
+                  <div className="text-slate-700 text-xs sm:text-sm pt-0.5 font-medium">
+                    Size <strong className="text-slate-950 font-bold">Size {item.size}</strong> • {item.reason}
                   </div>
 
-                  <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
-                    <span>Balance: <strong className="text-slate-700 num-tabular">{item.resultingQuantity}</strong> pcs</span>
+                  <div className="text-xs text-slate-500 flex items-center justify-between pt-0.5">
+                    <span>Balance: <strong className="text-slate-800 font-bold num-tabular">{item.resultingQuantity}</strong> pcs</span>
                     <span>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
               No recent stock movement logs.
             </div>
           )}

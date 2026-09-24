@@ -39,58 +39,58 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = React.memo(({
   };
 
   return (
-    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {/* Total Sets */}
       <div 
         onClick={handleAllClick}
-        className={`bg-white px-2.5 py-1.5 sm:px-3 sm:py-2.5 rounded-xl border transition cursor-pointer ${
+        className={`bg-white px-3 py-2 sm:px-4 sm:py-3 rounded-xl border transition cursor-pointer ${
           activeFilter === 'all' 
-            ? 'border-slate-300 shadow-xs' 
-            : 'border-slate-200 opacity-80 hover:opacity-100'
+            ? 'border-slate-400 shadow-xs' 
+            : 'border-slate-200 opacity-90 hover:opacity-100'
         }`}
         title="Show all products"
       >
-        <div className="text-[9px] sm:text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+        <div className="text-[11px] sm:text-xs uppercase font-bold text-slate-500 tracking-wider">
           Total Sets
         </div>
-        <div className="text-sm sm:text-base font-bold text-slate-900 num-tabular tracking-tight">
-          {totalProducts} <span className="text-[10px] font-normal text-slate-400 hidden xs:inline">designs</span>
+        <div className="text-base sm:text-lg font-black text-slate-900 num-tabular tracking-tight mt-0.5">
+          {totalProducts} <span className="text-xs font-semibold text-slate-400 hidden xs:inline">sets</span>
         </div>
       </div>
 
       {/* Total Stock */}
       <div 
         onClick={handleAllClick}
-        className="bg-white px-2.5 py-1.5 sm:px-3 sm:py-2.5 rounded-xl border border-slate-200 transition cursor-pointer hover:border-slate-300"
+        className="bg-white px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-slate-200 transition cursor-pointer hover:border-slate-300"
         title="Show all products"
       >
-        <div className="text-[9px] sm:text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+        <div className="text-[11px] sm:text-xs uppercase font-bold text-slate-500 tracking-wider">
           Total Stock
         </div>
-        <div className="text-sm sm:text-base font-bold text-slate-900 num-tabular tracking-tight">
-          {totalUnits} <span className="text-[10px] font-normal text-slate-400">pcs</span>
+        <div className="text-base sm:text-lg font-black text-slate-900 num-tabular tracking-tight mt-0.5">
+          {totalUnits} <span className="text-xs font-semibold text-slate-400">pcs</span>
         </div>
       </div>
 
       {/* Low Stock (Interactive Filter Card) */}
       <div 
         onClick={handleLowStockClick}
-        className={`px-2.5 py-1.5 sm:px-3 sm:py-2.5 rounded-xl border transition-all cursor-pointer tap-press select-none ${
+        className={`px-3 py-2 sm:px-4 sm:py-3 rounded-xl border transition-all cursor-pointer tap-press select-none ${
           activeFilter === 'low-stock'
             ? 'bg-amber-500 text-white border-amber-600 shadow-sm ring-2 ring-amber-400/30'
-            : 'bg-white border-amber-200/80 hover:border-amber-400 hover:bg-amber-50/40'
+            : 'bg-white border-amber-200/90 hover:border-amber-400 hover:bg-amber-50/40'
         }`}
         title={activeFilter === 'low-stock' ? 'Click to show all' : 'Click to filter low stock items'}
       >
-        <div className={`text-[9px] sm:text-[10px] uppercase font-bold tracking-wider ${
-          activeFilter === 'low-stock' ? 'text-amber-100' : 'text-amber-700'
+        <div className={`text-[11px] sm:text-xs uppercase font-bold tracking-wider ${
+          activeFilter === 'low-stock' ? 'text-amber-100' : 'text-amber-800'
         }`}>
           Low Stock {activeFilter === 'low-stock' && '✓'}
         </div>
-        <div className={`text-sm sm:text-base font-extrabold num-tabular tracking-tight ${
+        <div className={`text-base sm:text-lg font-black num-tabular tracking-tight mt-0.5 ${
           activeFilter === 'low-stock' ? 'text-white' : 'text-amber-950'
         }`}>
-          {totalAlerts} <span className={`text-[10px] font-normal ${
+          {totalAlerts} <span className={`text-xs font-semibold ${
             activeFilter === 'low-stock' ? 'text-amber-100' : 'text-slate-400'
           }`}>items</span>
         </div>
