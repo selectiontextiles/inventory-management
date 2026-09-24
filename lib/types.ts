@@ -17,6 +17,7 @@ export interface Product {
   subtitle?: string; // e.g. "Divine Fixit Full Shirt Dhoti Set"
   category: string;
   imageUrl?: string;
+  sizes?: string[]; // Product-specific sizes, e.g. ['36', '38', '40'] or ['38', '40', '42', '44']
   variants: ColorVariant[];
   totalUnits: number;
   totalAlerts: number; // Count of depleted or low stock size variants
@@ -41,6 +42,7 @@ export interface ProductFormData {
   subtitle?: string;
   category: string;
   imageUrl?: string;
+  sizes?: string[];
   variants: {
     id?: string;
     colorName: string;

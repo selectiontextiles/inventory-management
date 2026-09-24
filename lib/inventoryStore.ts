@@ -124,13 +124,14 @@ export const SEED_PRODUCTS: Product[] = [
   }
 ];
 
-function calculateProductTotals(variants: ColorVariant[]) {
+export function calculateProductTotals(variants: ColorVariant[], productSizes: string[] = STANDARD_SIZES) {
   let totalUnits = 0;
   let totalAlerts = 0;
+  const activeSizes = productSizes && productSizes.length > 0 ? productSizes : STANDARD_SIZES;
 
   variants.forEach(v => {
     let varTotal = 0;
-    STANDARD_SIZES.forEach(sz => {
+    activeSizes.forEach(sz => {
       const q = v.sizes[sz] || 0;
       varTotal += q;
       if (q === 0) totalAlerts += 1;
@@ -210,6 +211,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
         subtitle,
         category,
         image_url,
+        sizes,
         created_at,
         updated_at,
         product_variants (
@@ -239,6 +241,8 @@ export async function fetchAllProducts(): Promise<Product[]> {
       // Sort variants deterministically by creation time
       rawVariants.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
 
+      const productSizes: string[] = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : STANDARD_SIZES;
+
       const variants: ColorVariant[] = rawVariants.map((row: any) => {
         const cleanSizes: Record<string, number> = {
           '36': Math.max(0, row.size_36 || 0),
@@ -247,7 +251,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
           '42': Math.max(0, row.size_42 || 0),
           '44': Math.max(0, row.size_44 || 0),
         };
-        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+        const totalUnits = productSizes.reduce((sum, sz) => sum + (cleanSizes[sz] || 0), 0);
 
         return {
           id: row.id,
@@ -258,7 +262,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
         };
       });
 
-      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants, productSizes);
 
       return {
         id: p.id,
@@ -267,6 +271,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
         subtitle: p.subtitle || '',
         category: p.category || 'General',
         imageUrl: p.image_url || '',
+        sizes: productSizes,
         variants,
         totalUnits,
         totalAlerts,
@@ -307,6 +312,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
         subtitle,
         category,
         image_url,
+        sizes,
         created_at,
         updated_at,
         product_variants (
@@ -333,6 +339,8 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
       const rawVariants = Array.isArray(p.product_variants) ? p.product_variants : [];
       rawVariants.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
 
+      const productSizes: string[] = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : STANDARD_SIZES;
+
       const variants: ColorVariant[] = rawVariants.map((row: any) => {
         const cleanSizes: Record<string, number> = {
           '36': Math.max(0, row.size_36 || 0),
@@ -341,7 +349,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
           '42': Math.max(0, row.size_42 || 0),
           '44': Math.max(0, row.size_44 || 0),
         };
-        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+        const totalUnits = productSizes.reduce((sum, sz) => sum + (cleanSizes[sz] || 0), 0);
         return {
           id: row.id,
           colorName: row.color_name,
@@ -351,7 +359,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
         };
       });
 
-      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants, productSizes);
 
       return {
         id: p.id,
@@ -360,6 +368,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
         subtitle: p.subtitle || '',
         category: p.category || 'General',
         imageUrl: p.image_url || '',
+        sizes: productSizes,
         variants,
         totalUnits,
         totalAlerts,
@@ -379,6 +388,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
 export async function saveProduct(formData: ProductFormData, existingId?: string): Promise<Product> {
   const local = getLocalProducts();
   const now = new Date().toISOString();
+  const productSizes: string[] = Array.isArray(formData.sizes) && formData.sizes.length > 0 ? formData.sizes : STANDARD_SIZES;
 
   // Validate and sanitize variants
   const processedVariants: ColorVariant[] = formData.variants.map((v, idx) => {
@@ -389,7 +399,12 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
       '42': Math.max(0, Number(v.sizes['42']) || 0),
       '44': Math.max(0, Number(v.sizes['44']) || 0),
     };
-    const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+    // Include custom sizes if any
+    Object.keys(v.sizes).forEach(sz => {
+      cleanSizes[sz] = Math.max(0, Number(v.sizes[sz]) || 0);
+    });
+
+    const totalUnits = productSizes.reduce((sum, sz) => sum + (cleanSizes[sz] || 0), 0);
 
     return {
       id: v.id || `var-${Date.now()}-${idx}`,
@@ -399,7 +414,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
     };
   });
 
-  const { totalUnits, totalAlerts } = calculateProductTotals(processedVariants);
+  const { totalUnits, totalAlerts } = calculateProductTotals(processedVariants, productSizes);
 
   if (!isSupabaseConfigured || !supabase) {
     if (existingId) {
@@ -411,6 +426,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
             subtitle: formData.subtitle?.trim() || '',
             category: formData.category.trim(),
             imageUrl: formData.imageUrl?.trim() || p.imageUrl,
+            sizes: productSizes,
             variants: processedVariants,
             totalUnits,
             totalAlerts,
@@ -430,6 +446,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
         imageUrl: formData.imageUrl?.trim() || '',
+        sizes: productSizes,
         variants: processedVariants,
         totalUnits,
         totalAlerts,
@@ -450,6 +467,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
         image_url: formData.imageUrl?.trim(),
+        sizes: productSizes,
         updated_at: now,
       }).eq('id', existingId);
 
@@ -499,6 +517,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
         image_url: formData.imageUrl?.trim(),
+        sizes: productSizes,
       }).select('id').single();
 
       if (insErr) throw insErr;
@@ -597,6 +616,7 @@ export async function adjustVariantStockQuantity(
           subtitle,
           category,
           image_url,
+          sizes,
           created_at,
           updated_at,
           product_variants (
@@ -618,6 +638,8 @@ export async function adjustVariantStockQuantity(
         return null;
       }
 
+      const productSizes: string[] = Array.isArray(prodData.sizes) && prodData.sizes.length > 0 ? prodData.sizes : STANDARD_SIZES;
+
       const rawVariants = Array.isArray(prodData.product_variants) ? prodData.product_variants : [];
       const variants: ColorVariant[] = rawVariants.map((row: any) => {
         const cleanSizes: Record<string, number> = {
@@ -627,7 +649,7 @@ export async function adjustVariantStockQuantity(
           '42': Math.max(0, row.size_42 || 0),
           '44': Math.max(0, row.size_44 || 0),
         };
-        const totalUnits = Object.values(cleanSizes).reduce((a, b) => a + b, 0);
+        const totalUnits = productSizes.reduce((sum, sz) => sum + (cleanSizes[sz] || 0), 0);
         return {
           id: row.id,
           colorName: row.color_name,
@@ -637,7 +659,7 @@ export async function adjustVariantStockQuantity(
         };
       });
 
-      const { totalUnits, totalAlerts } = calculateProductTotals(variants);
+      const { totalUnits, totalAlerts } = calculateProductTotals(variants, productSizes);
 
       return {
         id: prodData.id,
@@ -646,6 +668,7 @@ export async function adjustVariantStockQuantity(
         subtitle: prodData.subtitle || '',
         category: prodData.category || 'General',
         imageUrl: prodData.image_url || '',
+        sizes: productSizes,
         variants,
         totalUnits,
         totalAlerts,
@@ -677,10 +700,12 @@ export async function adjustVariantStockQuantity(
     return v;
   });
 
-  const { totalUnits, totalAlerts } = calculateProductTotals(updatedVariants);
+  const productSizes = product.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES;
+  const { totalUnits, totalAlerts } = calculateProductTotals(updatedVariants, productSizes);
 
   const updatedProduct: Product = {
     ...product,
+    sizes: productSizes,
     variants: updatedVariants,
     totalUnits,
     totalAlerts,

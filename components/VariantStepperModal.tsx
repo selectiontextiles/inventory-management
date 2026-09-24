@@ -19,9 +19,17 @@ export const VariantStepperModal: React.FC<VariantStepperModalProps> = ({
   variant,
   onAdjustVariantStock,
 }) => {
-  const [selectedSize, setSelectedSize] = React.useState<string>('38');
+  const productSizes = product?.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES;
+  const [selectedSize, setSelectedSize] = React.useState<string>(productSizes[0] || '38');
   const [isDirectEditing, setIsDirectEditing] = React.useState(false);
   const [inputVal, setInputVal] = React.useState('');
+
+  // Sync selectedSize if current selectedSize is not in product's sizes
+  React.useEffect(() => {
+    if (productSizes.length > 0 && !productSizes.includes(selectedSize)) {
+      setSelectedSize(productSizes[0]);
+    }
+  }, [productSizes, selectedSize]);
 
   if (!isOpen || !product || !variant) return null;
 
@@ -80,10 +88,10 @@ export const VariantStepperModal: React.FC<VariantStepperModalProps> = ({
         {/* Size Selection Tab Strip */}
         <div className="py-4">
           <label className="text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider block mb-2.5">
-            Select Size
+            Select Size ({productSizes.length} available)
           </label>
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
-            {STANDARD_SIZES.map((sz) => {
+          <div className={`grid gap-2 sm:gap-3 ${productSizes.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-5'}`}>
+            {productSizes.map((sz) => {
               const isSelected = selectedSize === sz;
               const qty = variant.sizes[sz] ?? 0;
               return (

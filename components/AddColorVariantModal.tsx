@@ -17,11 +17,19 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
   product,
   onSaveVariant,
 }) => {
+  const productSizes = product?.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES;
   const [colorName, setColorName] = useState('');
-  const [sizes, setSizes] = useState<Record<string, number>>({
-    '36': 0, '38': 0, '40': 0, '42': 0, '44': 0,
-  });
+  const [sizes, setSizes] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    const init: Record<string, number> = {};
+    productSizes.forEach(sz => {
+      init[sz] = 0;
+    });
+    setSizes(init);
+    setColorName('');
+  }, [product, isOpen, productSizes]);
 
   if (!isOpen || !product) return null;
 
@@ -80,10 +88,10 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
 
           <div>
             <label className="block text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider mb-2">
-              Initial Sizes (36 — 44)
+              Initial Sizes ({productSizes.map(s => `Size ${s}`).join(', ')})
             </label>
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
-              {STANDARD_SIZES.map(sz => {
+            <div className={`grid gap-1.5 sm:gap-2.5 ${productSizes.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-5'}`}>
+              {productSizes.map(sz => {
                 const qty = sizes[sz] ?? 0;
                 return (
                   <div 

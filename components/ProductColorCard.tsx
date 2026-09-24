@@ -32,7 +32,7 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
           {/* Prominent Visual Reference Photo */}
           <div
             onClick={() => product.imageUrl && onOpenImagePreview(product.imageUrl, product.name)}
-            className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200/90 cursor-pointer bg-slate-50 group shrink-0"
+            className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 cursor-pointer bg-slate-50 group shrink-0"
             title="Tap to preview image"
           >
             {product.imageUrl ? (
@@ -40,7 +40,7 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
                 src={product.imageUrl}
                 alt={product.name}
                 fill
-                sizes="(max-width: 640px) 72px, 80px"
+                sizes="(max-width: 640px) 64px, 80px"
                 className="object-cover group-hover:scale-105 transition duration-200"
                 unoptimized
               />
@@ -175,33 +175,33 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
 
                 {/* Total Units */}
                 <div className="shrink-0 text-right">
-                  <span className="font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded text-xs sm:text-sm font-mono tracking-tight num-tabular border border-teal-200/60">
+                  <span className="font-extrabold text-teal-900 bg-teal-50 px-2.5 py-0.5 rounded text-xs sm:text-sm font-mono tracking-tight num-tabular border border-teal-200/60">
                     {variant.totalUnits} units
                   </span>
                 </div>
               </div>
 
-              {/* Bottom line: Large, easily readable size chips (36, 38, 40, 42, 44) for middle-aged users */}
-              <div className="pt-2 flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                {STANDARD_SIZES.map((sz) => {
+              {/* Bottom line: High-Contrast, Stacked Size Badges for maximum legibility */}
+              <div className="pt-2.5 flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                {(product.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES).map((sz) => {
                   const q = variant.sizes[sz] ?? 0;
                   const isZero = q === 0;
 
                   return (
                     <div 
                       key={sz}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs sm:text-sm font-mono border transition-colors ${
+                      className={`inline-flex flex-col items-center justify-center min-w-[52px] sm:min-w-[58px] px-2.5 py-1.5 rounded-xl border text-center transition-colors ${
                         isZero 
-                          ? 'bg-slate-50 border-slate-200/80 text-slate-400' 
-                          : 'bg-slate-100/90 border-slate-200 text-slate-800'
+                          ? 'bg-slate-50 border-slate-200 text-slate-400' 
+                          : 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       }`}
                     >
-                      <span className="font-semibold text-slate-500 text-[11px] sm:text-xs">
-                        {sz}:
+                      <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-none ${isZero ? 'text-slate-400' : 'text-slate-300'}`}>
+                        Size {sz}
                       </span>
-                      <strong className={`font-black num-tabular ${isZero ? 'text-slate-400' : 'text-slate-950'}`}>
+                      <span className={`text-base sm:text-lg font-black font-mono num-tabular leading-tight mt-1 ${isZero ? 'text-slate-400' : 'text-white'}`}>
                         {q}
-                      </strong>
+                      </span>
                     </div>
                   );
                 })}

@@ -37,6 +37,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [productSizes, setProductSizes] = useState<string[]>(['36', '38', '40', '42', '44']);
+  const [availableSizesPool, setAvailableSizesPool] = useState<string[]>(['36', '38', '40', '42', '44']);
+  const [isAddingCustomSize, setIsAddingCustomSize] = useState(false);
+  const [newCustomSizeInput, setNewCustomSizeInput] = useState('');
   const [variants, setVariants] = useState<{ id?: string; colorName: string; sizes: Record<string, number> }[]>([
     { colorName: 'Shade No.01', sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 } },
   ]);
@@ -55,6 +59,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     return list;
   }, [customCategories, category]);
 
+  const allAvailableSizes = React.useMemo(() => {
+    const set = new Set([...STANDARD_SIZES, ...availableSizesPool, ...productSizes]);
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return a.localeCompare(b);
+    });
+  }, [availableSizesPool, productSizes]);
+
   const handleConfirmNewCategory = () => {
     const trimmed = newCategoryInput.trim();
     if (!trimmed) return;
@@ -66,12 +80,59 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setIsAddingCustomCategory(false);
   };
 
+  const handleConfirmNewCustomSize = () => {
+    const trimmed = newCustomSizeInput.trim().toUpperCase();
+    if (!trimmed) return;
+    if (!availableSizesPool.includes(trimmed)) {
+      setAvailableSizesPool(prev => [...prev, trimmed]);
+    }
+    if (!productSizes.includes(trimmed)) {
+      setProductSizes(prev => {
+        const next = [...prev, trimmed];
+        return next.sort((a, b) => {
+          const numA = parseInt(a, 10);
+          const numB = parseInt(b, 10);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return a.localeCompare(b);
+        });
+      });
+    }
+    setNewCustomSizeInput('');
+    setIsAddingCustomSize(false);
+  };
+
+  const handleToggleSize = (sz: string) => {
+    if (productSizes.includes(sz)) {
+      if (productSizes.length <= 1) {
+        setErrorMessage('A product must have at least one active size.');
+        return;
+      }
+      setProductSizes(prev => prev.filter(s => s !== sz));
+    } else {
+      setErrorMessage('');
+      setProductSizes(prev => {
+        const next = [...prev, sz];
+        return next.sort((a, b) => {
+          const numA = parseInt(a, 10);
+          const numB = parseInt(b, 10);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return a.localeCompare(b);
+        });
+      });
+    }
+  };
+
   useEffect(() => {
     if (productToEdit) {
       setName(productToEdit.name);
       setSubtitle(productToEdit.subtitle || '');
       setCategory(productToEdit.category || 'Ethnic Sets');
       setImageUrl(productToEdit.imageUrl || '');
+      const editSizes = productToEdit.sizes && productToEdit.sizes.length > 0 
+        ? productToEdit.sizes 
+        : ['36', '38', '40', '42', '44'];
+      setProductSizes(editSizes);
+      setAvailableSizesPool(prev => Array.from(new Set([...prev, ...editSizes])));
       setVariants(
         productToEdit.variants.map(v => ({
           id: v.id,
@@ -84,12 +145,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setSubtitle('');
       setCategory('Ethnic Sets');
       setImageUrl('');
+      setProductSizes(['36', '38', '40', '42', '44']);
       setVariants([
         { colorName: 'Shade No.01', sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 } },
       ]);
     }
     setIsAddingCustomCategory(false);
+    setIsAddingCustomSize(false);
     setNewCategoryInput('');
+    setNewCustomSizeInput('');
     setErrorMessage('');
   }, [productToEdit, isOpen]);
 
@@ -97,11 +161,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   const handleAddVariantRow = () => {
     const nextNum = variants.length + 1;
+    const initialSizes: Record<string, number> = {};
+    productSizes.forEach(sz => {
+      initialSizes[sz] = 0;
+    });
     setVariants(prev => [
       ...prev,
       {
         colorName: `Shade No.${nextNum.toString().padStart(2, '0')}`,
-        sizes: { '36': 0, '38': 0, '40': 0, '42': 0, '44': 0 },
+        sizes: initialSizes,
       },
     ]);
   };
@@ -149,6 +217,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setErrorMessage('Product name is required.');
       return;
     }
+    if (productSizes.length === 0) {
+      setErrorMessage('Please select at least one size for this product.');
+      return;
+    }
     if (variants.length === 0) {
       setErrorMessage('Please add at least one color/shade variant.');
       return;
@@ -161,6 +233,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         subtitle,
         category,
         imageUrl,
+        sizes: productSizes,
         variants,
       }, productToEdit ? productToEdit.id : undefined);
       onClose();
@@ -360,12 +433,105 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
           </div>
 
-          {/* Color / Shade Variants Matrix List */}
-          <div className="space-y-3 pt-2">
+          {/* Product Sizes Configuration at Product Level */}
+          <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">
-                Color / Shade Variants & Sizes (36 — 44)
-              </label>
+              <div>
+                <label className="block text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider">
+                  Product Sizes ({productSizes.length} active)
+                </label>
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">
+                  Tap to enable/disable sizes for this product
+                </p>
+              </div>
+
+              {!isAddingCustomSize && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCustomSize(true)}
+                  className="tap-press text-xs font-bold text-slate-800 hover:text-slate-950 bg-white border border-slate-200 hover:bg-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition shrink-0 shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Custom Size</span>
+                </button>
+              )}
+            </div>
+
+            {/* Size Toggle Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {allAvailableSizes.map((sz) => {
+                const isSelected = productSizes.includes(sz);
+                return (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => handleToggleSize(sz)}
+                    className={`tap-press px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>Size {sz}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </button>
+                );
+              })}
+
+              {isAddingCustomSize && (
+                <div className="flex items-center gap-1.5 animate-in fade-in duration-100">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={newCustomSizeInput}
+                    onChange={(e) => setNewCustomSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirmNewCustomSize();
+                      }
+                      if (e.key === 'Escape') {
+                        setIsAddingCustomSize(false);
+                        setNewCustomSizeInput('');
+                      }
+                    }}
+                    placeholder="e.g. 46, XL"
+                    className="w-24 px-3 py-1.5 bg-white border-2 border-slate-900 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleConfirmNewCustomSize}
+                    disabled={!newCustomSizeInput.trim()}
+                    className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 disabled:opacity-40 transition"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingCustomSize(false);
+                      setNewCustomSizeInput('');
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Color / Shade Variants Matrix List */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider block">
+                  Color / Shade Variants
+                </label>
+                <span className="text-[11px] sm:text-xs text-slate-500 font-medium">
+                  Configuring stock for {productSizes.map(s => `Size ${s}`).join(', ')}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={handleAddVariantRow}
@@ -411,9 +577,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       )}
                     </div>
 
-                    {/* Touch-Friendly Vertical Stacked Size Steppers (36, 38, 40, 42, 44) */}
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
-                      {STANDARD_SIZES.map((sz) => {
+                    {/* Touch-Friendly Vertical Stacked Size Steppers (Product Specific Sizes) */}
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2.5">
+                      {productSizes.map((sz) => {
                         const qty = variant.sizes[sz] ?? 0;
                         return (
                           <div 

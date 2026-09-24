@@ -24,6 +24,7 @@ create table if not exists public.products (
   subtitle text not null default '',
   category text not null default 'General',
   image_url text not null default '',
+  sizes text[] not null default array['36', '38', '40', '42', '44']::text[],
   created_at timestamptz not null default clock_timestamp(),
   updated_at timestamptz not null default clock_timestamp()
 );

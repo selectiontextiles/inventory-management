@@ -110,13 +110,14 @@ export default function InventoryDashboard() {
       if (p.id === productId) {
         let totalUnits = 0;
         let totalAlerts = 0;
+        const pSizes = p.sizes && p.sizes.length > 0 ? p.sizes : ['36', '38', '40', '42', '44'];
 
         const updatedVariants = p.variants.map(v => {
           if (v.id === variantId) {
             const cur = v.sizes[size] || 0;
             const nextQty = Math.max(0, cur + delta);
             const nextSizes = { ...v.sizes, [size]: nextQty };
-            const varTotal = Object.values(nextSizes).reduce((a, b) => a + b, 0);
+            const varTotal = pSizes.reduce((sum, sz) => sum + (nextSizes[sz] || 0), 0);
             return { ...v, sizes: nextSizes, totalUnits: varTotal };
           }
           return v;
@@ -124,7 +125,8 @@ export default function InventoryDashboard() {
 
         updatedVariants.forEach(v => {
           totalUnits += v.totalUnits;
-          Object.values(v.sizes).forEach(q => {
+          pSizes.forEach(sz => {
+            const q = v.sizes[sz] || 0;
             if (q === 0) totalAlerts += 1;
           });
         });
@@ -140,7 +142,8 @@ export default function InventoryDashboard() {
         const cur = prev.variant.sizes[size] || 0;
         const nextQty = Math.max(0, cur + delta);
         const nextSizes = { ...prev.variant.sizes, [size]: nextQty };
-        const totalUnits = Object.values(nextSizes).reduce((a, b) => a + b, 0);
+        const pSizes = prev.product.sizes && prev.product.sizes.length > 0 ? prev.product.sizes : ['36', '38', '40', '42', '44'];
+        const totalUnits = pSizes.reduce((sum, sz) => sum + (nextSizes[sz] || 0), 0);
         return {
           product: prev.product,
           variant: { ...prev.variant, sizes: nextSizes, totalUnits },
@@ -184,6 +187,7 @@ export default function InventoryDashboard() {
       subtitle: prod.subtitle,
       category: prod.category,
       imageUrl: prod.imageUrl,
+      sizes: prod.sizes,
       variants: [...existingVars, { colorName, sizes }],
     }, prod.id);
 
