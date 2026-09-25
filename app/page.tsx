@@ -171,7 +171,8 @@ export default function InventoryDashboard() {
   const handleSaveNewVariant = async (
     productId: string,
     colorName: string,
-    sizes: Record<string, number>
+    sizes: Record<string, number>,
+    imageUrl?: string
   ) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
@@ -179,6 +180,7 @@ export default function InventoryDashboard() {
     const existingVars = prod.variants.map(v => ({
       id: v.id,
       colorName: v.colorName,
+      imageUrl: v.imageUrl,
       sizes: v.sizes,
     }));
 
@@ -186,9 +188,8 @@ export default function InventoryDashboard() {
       name: prod.name,
       subtitle: prod.subtitle,
       category: prod.category,
-      imageUrl: prod.imageUrl,
       sizes: prod.sizes,
-      variants: [...existingVars, { colorName, sizes }],
+      variants: [...existingVars, { colorName, imageUrl, sizes }],
     }, prod.id);
 
     showToast(`Added ${colorName} to ${prod.name}`, 'Shade Added', 'success');

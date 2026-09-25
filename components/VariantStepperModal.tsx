@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { X, Plus, Minus, Check } from 'lucide-react';
 import { Product, ColorVariant, STANDARD_SIZES } from '@/lib/types';
 
@@ -60,18 +61,23 @@ export const VariantStepperModal: React.FC<VariantStepperModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
-          <div>
-            <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider block">
-              {product.name}
-            </span>
-            <div className="flex items-center gap-2 mt-0.5">
-              {variant.colorHex ? (
-                <span
-                  className="w-4 h-4 rounded-full border border-slate-300 inline-block shrink-0 shadow-xs"
-                  style={{ backgroundColor: variant.colorHex }}
+          <div className="flex items-center gap-3 min-w-0 pr-2">
+            {variant.imageUrl ? (
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 shadow-xs">
+                <Image
+                  src={variant.imageUrl}
+                  alt={variant.colorName}
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
-              ) : null}
-              <h3 className="font-black text-slate-900 text-lg sm:text-xl truncate max-w-[280px] sm:max-w-md">
+              </div>
+            ) : null}
+            <div className="min-w-0">
+              <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider block">
+                {product.name}
+              </span>
+              <h3 className="font-black text-slate-900 text-lg sm:text-xl truncate max-w-[220px] sm:max-w-md">
                 {variant.colorName}
               </h3>
             </div>

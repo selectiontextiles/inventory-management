@@ -23,7 +23,6 @@ create table if not exists public.products (
   name text not null,
   subtitle text not null default '',
   category text not null default 'General',
-  image_url text not null default '',
   sizes text[] not null default array['36', '38', '40', '42', '44']::text[],
   created_at timestamptz not null default clock_timestamp(),
   updated_at timestamptz not null default clock_timestamp()
@@ -42,6 +41,7 @@ create table if not exists public.product_variants (
   product_id uuid not null references public.products(id) on delete cascade,
   color_name text not null,
   color_hex text not null default '',
+  image_url text not null default '',
   size_36 integer not null default 0 check (size_36 >= 0),
   size_38 integer not null default 0 check (size_38 >= 0),
   size_40 integer not null default 0 check (size_40 >= 0),

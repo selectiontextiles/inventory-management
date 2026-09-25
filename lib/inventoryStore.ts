@@ -16,7 +16,6 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Uathayam 2in1 Sets',
     subtitle: 'Divine Fixit Full Shirt Dhoti Set',
     category: 'Ethnic Sets',
-    imageUrl: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=800&auto=format&fit=crop&q=80',
     totalUnits: 81,
     totalAlerts: 16,
     createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -26,6 +25,7 @@ export const SEED_PRODUCTS: Product[] = [
         id: 'var-01',
         colorName: 'T.Blue / Sh No.02',
         colorHex: '#38bdf8',
+        imageUrl: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=800&auto=format&fit=crop&q=80',
         sizes: { '36': 1, '38': 2, '40': 3, '42': 2, '44': 3 },
         totalUnits: 11,
       },
@@ -33,6 +33,7 @@ export const SEED_PRODUCTS: Product[] = [
         id: 'var-02',
         colorName: 'Orange / Sh No.03',
         colorHex: '#fb923c',
+        imageUrl: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80',
         sizes: { '36': 1, '38': 1, '40': 0, '42': 1, '44': 2 },
         totalUnits: 5,
       },
@@ -93,7 +94,6 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Selection Linen Classic Shirts',
     subtitle: 'Pure French Normandy Linen 60 Lea',
     category: 'Linen',
-    imageUrl: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80',
     totalUnits: 45,
     totalAlerts: 4,
     createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
@@ -103,6 +103,7 @@ export const SEED_PRODUCTS: Product[] = [
         id: 'var-10',
         colorName: 'Sand Beige / Shade No.01',
         colorHex: '#d6c7b2',
+        imageUrl: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80',
         sizes: { '36': 3, '38': 5, '40': 6, '42': 2, '44': 1 },
         totalUnits: 17,
       },
@@ -210,7 +211,6 @@ export async function fetchAllProducts(): Promise<Product[]> {
         name,
         subtitle,
         category,
-        image_url,
         sizes,
         created_at,
         updated_at,
@@ -218,11 +218,13 @@ export async function fetchAllProducts(): Promise<Product[]> {
           id,
           color_name,
           color_hex,
+          image_url,
           size_36,
           size_38,
           size_40,
           size_42,
-          size_44
+          size_44,
+          created_at
         )
       `)
       .order('created_at', { ascending: false });
@@ -257,6 +259,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
           id: row.id,
           colorName: row.color_name,
           colorHex: row.color_hex || '',
+          imageUrl: row.image_url || '',
           sizes: cleanSizes,
           totalUnits,
         };
@@ -270,7 +273,6 @@ export async function fetchAllProducts(): Promise<Product[]> {
         name: p.name,
         subtitle: p.subtitle || '',
         category: p.category || 'General',
-        imageUrl: p.image_url || '',
         sizes: productSizes,
         variants,
         totalUnits,
@@ -311,7 +313,6 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
         name,
         subtitle,
         category,
-        image_url,
         sizes,
         created_at,
         updated_at,
@@ -319,6 +320,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
           id,
           color_name,
           color_hex,
+          image_url,
           size_36,
           size_38,
           size_40,
@@ -354,6 +356,7 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
           id: row.id,
           colorName: row.color_name,
           colorHex: row.color_hex || '',
+          imageUrl: row.image_url || '',
           sizes: cleanSizes,
           totalUnits,
         };
@@ -367,7 +370,6 @@ export async function fetchProductsPaginated(page: number = 1, pageSize: number 
         name: p.name,
         subtitle: p.subtitle || '',
         category: p.category || 'General',
-        imageUrl: p.image_url || '',
         sizes: productSizes,
         variants,
         totalUnits,
@@ -409,6 +411,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
     return {
       id: v.id || `var-${Date.now()}-${idx}`,
       colorName: v.colorName.trim() || `Shade No.${idx + 1}`,
+      imageUrl: v.imageUrl?.trim() || '',
       sizes: cleanSizes,
       totalUnits,
     };
@@ -425,7 +428,6 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
             name: formData.name.trim(),
             subtitle: formData.subtitle?.trim() || '',
             category: formData.category.trim(),
-            imageUrl: formData.imageUrl?.trim() || p.imageUrl,
             sizes: productSizes,
             variants: processedVariants,
             totalUnits,
@@ -445,7 +447,6 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         name: formData.name.trim(),
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
-        imageUrl: formData.imageUrl?.trim() || '',
         sizes: productSizes,
         variants: processedVariants,
         totalUnits,
@@ -466,7 +467,6 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         name: formData.name.trim(),
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
-        image_url: formData.imageUrl?.trim(),
         sizes: productSizes,
         updated_at: now,
       }).eq('id', existingId);
@@ -478,6 +478,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
           keptVariantIds.push(v.id);
           await supabase.from('product_variants').update({
             color_name: v.colorName,
+            image_url: v.imageUrl || '',
             size_36: v.sizes['36'] || 0,
             size_38: v.sizes['38'] || 0,
             size_40: v.sizes['40'] || 0,
@@ -489,6 +490,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
           const { data: insRow } = await supabase.from('product_variants').insert({
             product_id: existingId,
             color_name: v.colorName,
+            image_url: v.imageUrl || '',
             size_36: v.sizes['36'] || 0,
             size_38: v.sizes['38'] || 0,
             size_40: v.sizes['40'] || 0,
@@ -516,7 +518,6 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         name: formData.name.trim(),
         subtitle: formData.subtitle?.trim() || '',
         category: formData.category.trim(),
-        image_url: formData.imageUrl?.trim(),
         sizes: productSizes,
       }).select('id').single();
 
@@ -527,6 +528,7 @@ export async function saveProduct(formData: ProductFormData, existingId?: string
         const variantRows = processedVariants.map(v => ({
           product_id: productId,
           color_name: v.colorName,
+          image_url: v.imageUrl || '',
           size_36: v.sizes['36'] || 0,
           size_38: v.sizes['38'] || 0,
           size_40: v.sizes['40'] || 0,
@@ -565,6 +567,7 @@ export async function adjustVariantStockQuantity(
           product_id,
           color_name,
           color_hex,
+          image_url,
           size_36,
           size_38,
           size_40,
@@ -615,7 +618,6 @@ export async function adjustVariantStockQuantity(
           name,
           subtitle,
           category,
-          image_url,
           sizes,
           created_at,
           updated_at,
@@ -623,6 +625,7 @@ export async function adjustVariantStockQuantity(
             id,
             color_name,
             color_hex,
+            image_url,
             size_36,
             size_38,
             size_40,
@@ -654,6 +657,7 @@ export async function adjustVariantStockQuantity(
           id: row.id,
           colorName: row.color_name,
           colorHex: row.color_hex || '',
+          imageUrl: row.image_url || '',
           sizes: cleanSizes,
           totalUnits,
         };
@@ -667,7 +671,6 @@ export async function adjustVariantStockQuantity(
         name: prodData.name,
         subtitle: prodData.subtitle || '',
         category: prodData.category || 'General',
-        imageUrl: prodData.image_url || '',
         sizes: productSizes,
         variants,
         totalUnits,

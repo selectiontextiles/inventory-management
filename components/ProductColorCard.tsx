@@ -26,64 +26,42 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-none overflow-hidden transition hover:border-slate-300">
-      {/* Product Header: Prominent Image + Full Title + Subtitle & Alert Badge */}
+      {/* Product Header: Clean Title, Category, Subtitle & Stock Status */}
       <div className="p-4 sm:p-5 pb-3.5">
-        <div className="flex items-start gap-3.5 relative">
-          {/* Prominent Visual Reference Photo */}
-          <div
-            onClick={() => product.imageUrl && onOpenImagePreview(product.imageUrl, product.name)}
-            className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 cursor-pointer bg-slate-50 group shrink-0"
-            title="Tap to preview image"
-          >
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                sizes="(max-width: 640px) 64px, 80px"
-                className="object-cover group-hover:scale-105 transition duration-200"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100/80">
-                <Tag className="w-5 h-5 text-slate-400/80 mb-0.5" />
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-400">No Photo</span>
-              </div>
-            )}
-            <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 flex items-center justify-center transition opacity-0 group-hover:opacity-100">
-              <Maximize2 className="w-4 h-4 text-white" />
+        <div className="flex items-start justify-between gap-3 relative">
+          <div className="flex-1 min-w-0 pr-8">
+            {/* Line 1: Category Badge + Product Title (Inline) */}
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <span className="inline-block px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                {product.category || 'General'}
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug truncate">
+                {product.name}
+              </h2>
             </div>
-          </div>
 
-          {/* Product Title, Subtitle, and Inline Alerts Badge */}
-          <div className="flex-1 min-w-0 pr-6">
-            {/* Full Product Title with 100% visibility - Bigger for middle-aged users */}
-            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
-              {product.name}
-            </h2>
-
-            {/* Subtitle / Fabric Tag */}
+            {/* Subtitle / Fabric Tag (if present) */}
             {product.subtitle && (
-              <div className="flex items-start gap-1.5 text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+              <div className="flex items-start gap-1.5 text-xs sm:text-sm text-slate-600 mt-0.5 font-medium">
                 <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                <span className="line-clamp-2 leading-tight">{product.subtitle}</span>
+                <span className="line-clamp-1 leading-tight">{product.subtitle}</span>
               </div>
             )}
 
-            {/* Meta Row: Alerts Pill & Total Units */}
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* Line 2: Stock Status Alert Pill & Total Units */}
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {product.totalAlerts > 0 ? (
-                <span className="inline-flex items-center gap-1 font-mono text-xs sm:text-xs font-bold px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200">
+                <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                   <span>{product.totalAlerts} out of stock</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center font-mono text-xs sm:text-xs font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="inline-flex items-center font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
                   Healthy stock
                 </span>
               )}
 
-              <span className="text-xs sm:text-xs font-bold text-slate-500">
+              <span className="text-xs font-bold text-slate-500">
                 • {product.totalUnits} total units
               </span>
             </div>
@@ -154,43 +132,65 @@ export const ProductColorCard: React.FC<ProductColorCardProps> = React.memo(({
             <div
               key={variant.id}
               onClick={() => onSelectVariant(product, variant)}
-              className="px-4 sm:px-5 py-3.5 hover:bg-slate-50/90 transition-colors cursor-pointer group active:bg-slate-100"
+              className="px-4 sm:px-5 py-3 hover:bg-slate-50/90 transition-colors cursor-pointer group active:bg-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
-              {/* Top line of variant: Radio Circle + Shade Name + Total Units */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {/* Color Swatch (Only if color hex exists) */}
-                  {variant.colorHex ? (
-                    <span
-                      className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0 inline-block shadow-xs"
-                      style={{ backgroundColor: variant.colorHex }}
-                    />
-                  ) : null}
-
-                  {/* Color / Shade Name - Generous Font Size */}
-                  <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight truncate">
-                    {variant.colorName}
-                  </span>
+              {/* Left Side: Variant Photo + Shade Name + Total Units */}
+              <div className="flex items-center gap-3 min-w-0 sm:w-56 md:w-64 shrink-0">
+                {/* Variant Thumbnail Photo */}
+                <div
+                  onClick={(e) => {
+                    if (variant.imageUrl) {
+                      e.stopPropagation();
+                      onOpenImagePreview(variant.imageUrl, `${product.name} - ${variant.colorName}`);
+                    }
+                  }}
+                  className={`relative w-12 h-12 sm:w-13 sm:h-13 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 group/img ${
+                    variant.imageUrl ? 'cursor-pointer hover:border-slate-400 shadow-xs' : ''
+                  }`}
+                  title={variant.imageUrl ? 'Tap to preview image' : 'No photo for this shade'}
+                >
+                  {variant.imageUrl ? (
+                    <>
+                      <Image
+                        src={variant.imageUrl}
+                        alt={variant.colorName}
+                        fill
+                        sizes="(max-width: 640px) 48px, 52px"
+                        className="object-cover group-hover/img:scale-105 transition duration-200"
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-slate-900/0 group-hover/img:bg-slate-900/30 flex items-center justify-center transition opacity-0 group-hover/img:opacity-100">
+                        <Maximize2 className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-100/70">
+                      <Tag className="w-4 h-4 text-slate-300" />
+                    </div>
+                  )}
                 </div>
 
-                {/* Total Units */}
-                <div className="shrink-0 text-right">
-                  <span className="font-extrabold text-teal-900 bg-teal-50 px-2.5 py-0.5 rounded text-xs sm:text-sm font-mono tracking-tight num-tabular border border-teal-200/60">
+                {/* Shade Name & Units */}
+                <div className="min-w-0 flex-1">
+                  <span className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight truncate block">
+                    {variant.colorName}
+                  </span>
+                  <span className="inline-block mt-0.5 font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded text-[11px] sm:text-xs font-mono tracking-tight border border-teal-200/60 num-tabular">
                     {variant.totalUnits} units
                   </span>
                 </div>
               </div>
 
-              {/* Bottom line: High-Contrast, Stacked Size Badges for maximum legibility */}
-              <div className="pt-2.5 flex items-center gap-2 sm:gap-2.5 flex-wrap">
+              {/* Right Side: High-Contrast Size Badges in Same Line */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap sm:justify-end overflow-x-auto no-scrollbar">
                 {(product.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES).map((sz) => {
                   const q = variant.sizes[sz] ?? 0;
                   const isZero = q === 0;
 
                   return (
                     <div 
-                      key={sz}
-                      className={`inline-flex flex-col items-center justify-center min-w-[52px] sm:min-w-[58px] px-2.5 py-1.5 rounded-xl border text-center transition-colors ${
+                      key={sz} 
+                      className={`inline-flex flex-col items-center justify-center min-w-[50px] sm:min-w-[54px] px-2 py-1.5 rounded-xl border text-center transition-colors shrink-0 ${
                         isZero 
                           ? 'bg-slate-50 border-slate-200 text-slate-400' 
                           : 'bg-slate-900 text-white border-slate-900 shadow-xs'

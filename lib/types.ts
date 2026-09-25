@@ -6,6 +6,7 @@ export interface ColorVariant {
   id: string;
   colorName: string; // e.g. "T.Blue / Sh No.02", "Orange / Sh No.03"
   colorHex?: string; // Optional hex for swatch preview
+  imageUrl?: string; // Image for this specific color/shade variant
   sizes: Record<string, number>; // { '36': 1, '38': 2, '40': 3, '42': 2, '44': 3 }
   totalUnits: number;
 }
@@ -16,7 +17,6 @@ export interface Product {
   name: string; // e.g. "Uathayam 2in1 Sets"
   subtitle?: string; // e.g. "Divine Fixit Full Shirt Dhoti Set"
   category: string;
-  imageUrl?: string;
   sizes?: string[]; // Product-specific sizes, e.g. ['36', '38', '40'] or ['38', '40', '42', '44']
   variants: ColorVariant[];
   totalUnits: number;
@@ -41,11 +41,11 @@ export interface ProductFormData {
   name: string;
   subtitle?: string;
   category: string;
-  imageUrl?: string;
   sizes?: string[];
   variants: {
     id?: string;
     colorName: string;
+    imageUrl?: string;
     sizes: Record<string, number>;
   }[];
 }

@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Check, Plus, Minus } from 'lucide-react';
+import Image from 'next/image';
+import { X, Check, Plus, Minus, Upload, Image as ImageIcon } from 'lucide-react';
 import { Product, STANDARD_SIZES } from '@/lib/types';
+import { uploadProductImage } from '@/lib/inventoryStore';
 
 interface AddColorVariantModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onSaveVariant: (productId: string, colorName: string, sizes: Record<string, number>) => Promise<void>;
+  onSaveVariant: (productId: string, colorName: string, sizes: Record<string, number>, imageUrl?: string) => Promise<void>;
 }
 
 export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
@@ -19,6 +21,8 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
 }) => {
   const productSizes = product?.sizes && product.sizes.length > 0 ? product.sizes : STANDARD_SIZES;
   const [colorName, setColorName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [sizes, setSizes] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,6 +33,7 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
     });
     setSizes(init);
     setColorName('');
+    setImageUrl('');
   }, [product, isOpen, productSizes]);
 
   if (!isOpen || !product) return null;
@@ -38,14 +43,30 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
     setSizes(prev => ({ ...prev, [sz]: num }));
   };
 
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = await uploadProductImage(file);
+      setImageUrl(url);
+    } catch (err: any) {
+      alert(err.message || 'Image upload failed.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!colorName.trim()) return;
 
     setIsSubmitting(true);
     try {
-      await onSaveVariant(product.id, colorName.trim(), sizes);
+      await onSaveVariant(product.id, colorName.trim(), sizes, imageUrl.trim() || undefined);
       setColorName('');
+      setImageUrl('');
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -84,6 +105,51 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
               placeholder="e.g. Royal Blue / Shade No. 18"
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-base font-bold text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white transition"
             />
+          </div>
+
+          {/* Shade Photo Upload */}
+          <div>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Shade Photo (Optional)
+            </label>
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative w-10 h-10 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                  {imageUrl ? (
+                    <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                  ) : (
+                    <ImageIcon className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-slate-600 truncate">
+                  {imageUrl ? 'Photo attached' : 'No photo chosen'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <label className="tap-press cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
+                  <Upload className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{isUploading ? 'Uploading...' : imageUrl ? 'Change' : 'Upload'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </label>
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
+                    title="Remove photo"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -155,8 +221,8 @@ export const AddColorVariantModal: React.FC<AddColorVariantModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2.5 bg-slate-900 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center gap-2"
+              disabled={isSubmitting || isUploading}
+              className="px-5 py-2.5 bg-slate-900 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center gap-2 disabled:opacity-50"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
               <span>Add Shade</span>
